@@ -153,7 +153,15 @@ Tick these off on the phone. If something's wrong, tell Claude Code what you did
       lock it (a green dot shows); a third tap releases it. `caps lock` lights up too.
 - [ ] Top row: brightness, overview, search (the app launcher), dictation, Do Not Disturb,
       media keys and volume. The **F1–F12** switch (or `fn` for one key) makes them F-keys.
-- [ ] The big blue mic: tap, say something, tap again. The words are typed into the focused app.
+- [ ] The big blue mic (hold to talk, the default): hold it and speak, let go, and the words
+      are typed into the focused app. Slide up while holding to lock it on (a lock shows; tap
+      to finish). Slide left to cancel without typing.
+- [ ] Settings › Laptop Keyboard › Microphone button › "Tap to start and stop" switches to
+      tap-on, tap-off instead.
+- [ ] Customize: Settings › Laptop Keyboard. Change bottom-bar button 3 on the left to
+      Firefox, and F1 to "Lock the desktop". The keyboard changes straight away. Touch and
+      hold any bottom-bar button on the keyboard to jump to these settings. "Reset Keyboard"
+      puts everything back.
 - [ ] The hand button (bottom left) swaps the keyboard for a trackpad: one finger moves the
       pointer, tap clicks, two-finger tap right-clicks, two fingers scroll, tap then drag
       selects. Clicks work in Linux apps and on LinPad's own buttons, panels and title bars.

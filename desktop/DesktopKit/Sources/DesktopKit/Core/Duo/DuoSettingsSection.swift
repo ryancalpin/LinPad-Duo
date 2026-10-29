@@ -47,6 +47,8 @@ struct DuoSettingsSection: View {
                 row("Tent pose status board", $tentBoard, id: "tentBoard",
                     "Standing up like a tent, the outer screen shows the time, CPU and memory, and long jobs: anything started with notify-phone, builds and Claude Code. Tap it to see the desktop.")
             }
+            DuoDeckSettingsSection(controller: controller)
+                .id(SettingsApp.deckPage)
             DuoScaleSettings()
                 .onChangeCompat(of: autoScale) { _, _ in DuoScaling.shared.refresh() }
             SettingsSection(title: "Phone Features", symbol: "iphone") {

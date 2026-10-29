@@ -8,12 +8,6 @@ import UIKit
 struct DuoKey: Identifiable, Hashable {
     enum Modifier: String, Hashable { case shift, control, alt, meta }
 
-    /// What a function-row key does while the F1–F12 switch is off, as on a Mac.
-    enum SystemAction: Hashable {
-        case brightnessDown, brightnessUp, overview, search, dictation, doNotDisturb
-        case previousTrack, playPause, nextTrack, mute, volumeDown, volumeUp
-    }
-
     enum Kind: Hashable {
         /// `label` is what the cap shows (capitals for letters, as on a Mac).
         case character(String, shifted: String)
@@ -22,7 +16,9 @@ struct DuoKey: Identifiable, Hashable {
         case function
         case capsLock
         case backspace
-        case system(SystemAction)
+        /// Function-row key `n` (0…11): its action from DuoDeckLayout while the F1–F12
+        /// switch is off, as on a Mac, else F1–F12.
+        case functionSlot(Int)
     }
 
     let code: UInt32
@@ -52,9 +48,9 @@ struct DuoKey: Identifiable, Hashable {
         DuoKey(code: code, kind: .modifier(modifier), symbol: symbol, caption: caption, width: width)
     }
 
-    static func system(_ action: SystemAction, _ symbol: String, f number: Int, code: UInt32) -> DuoKey {
-        // F1–F10 are 59–68, F11 87, F12 88. A system key sends its action by default.
-        DuoKey(code: code, kind: .system(action), symbol: symbol, functionCode: code, functionLabel: "F\(number)")
+    static func slot(_ index: Int, code: UInt32) -> DuoKey {
+        // F1–F10 are 59–68, F11 87, F12 88.
+        DuoKey(code: code, kind: .functionSlot(index), functionCode: code, functionLabel: "F\(index + 1)")
     }
 
     func with(width: CGFloat) -> DuoKey {
@@ -63,15 +59,11 @@ struct DuoKey: Identifiable, Hashable {
         return key
     }
 
-    /// The function row, as on a MacBook: system actions, F1–F12 with fn or the switch.
+    /// The function row, as on a MacBook: customizable actions, F1–F12 with fn or the switch.
     static let functionRow: [DuoKey] = [
         special(1, "esc", text: "\u{1b}", width: 1.4),
-        system(.brightnessDown, "sun.min", f: 1, code: 59), system(.brightnessUp, "sun.max", f: 2, code: 60),
-        system(.overview, "rectangle.3.group", f: 3, code: 61), system(.search, "magnifyingglass", f: 4, code: 62),
-        system(.dictation, "mic", f: 5, code: 63), system(.doNotDisturb, "moon", f: 6, code: 64),
-        system(.previousTrack, "backward.end.fill", f: 7, code: 65), system(.playPause, "playpause.fill", f: 8, code: 66),
-        system(.nextTrack, "forward.end.fill", f: 9, code: 67), system(.mute, "speaker.slash", f: 10, code: 68),
-        system(.volumeDown, "speaker.wave.1", f: 11, code: 87), system(.volumeUp, "speaker.wave.3", f: 12, code: 88),
+        slot(0, code: 59), slot(1, code: 60), slot(2, code: 61), slot(3, code: 62), slot(4, code: 63), slot(5, code: 64),
+        slot(6, code: 65), slot(7, code: 66), slot(8, code: 67), slot(9, code: 68), slot(10, code: 87), slot(11, code: 88),
     ]
 
     /// The main block, US ANSI. ishwl turns the codes into characters with the layout chosen
@@ -185,8 +177,10 @@ final class DuoKeyboardModel {
         case .function:
             fnLatched.toggle()
             return
-        case .system(let action) where !showsFunctionKeys:
-            perform(action)
+        case .functionSlot(let index) where !showsFunctionKeys:
+            let action = DuoDeckLayout.shared.functionRow[index]
+            if action != .none { perform(action) }
+            fnLatched = false
             return
         case .capsLock:
             capsLock.toggle()
@@ -235,31 +229,34 @@ final class DuoKeyboardModel {
         release(key)
     }
 
-    // MARK: Function-row actions
+    // MARK: Deck actions (function row and bottom bar)
 
-    private func perform(_ action: DuoKey.SystemAction) {
+    func perform(_ action: DuoDeckAction) {
         guard let controller else { return }
         switch action {
+        case .none:
+            break
         case .brightnessDown, .brightnessUp:
             let screen = controller.input.referenceView?.window?.screen ?? UIScreen.main
             screen.brightness = min(max(screen.brightness + (action == .brightnessUp ? 0.0625 : -0.0625), 0), 1)
             controller.showOSD(.brightness(Double(screen.brightness)))
         case .overview:
             controller.toggleOverview()
-        case .search:
+        case .launcher:
             controller.toggleLauncher()
+        case .commandMenu:
+            controller.toggleCommandMenu()
         case .dictation:
             controller.duoDictation.toggle()
         case .doNotDisturb:
             controller.notifications.doNotDisturb.toggle()
             controller.notify(controller.notifications.doNotDisturb ? "Do Not Disturb is on." : "Do Not Disturb is off.")
+        case .lockScreen:
+            controller.lockScreen()
         case .previousTrack, .playPause, .nextTrack:
             // XF86AudioPrev / Play / Next, which Linux media players listen for.
             let code: UInt32 = action == .previousTrack ? 165 : action == .playPause ? 164 : 163
-            if let bridge = controller.linux {
-                bridge.key(code, pressed: true, focusedSurface: linuxTarget)
-                bridge.key(code, pressed: false, focusedSurface: linuxTarget)
-            }
+            tap(code)
         case .mute:
             guard let controls = controller.systemControls else { return }
             controls.isMuted.toggle()
@@ -270,7 +267,44 @@ final class DuoKeyboardModel {
             controls.volume = next
             if controls.isMuted && action == .volumeUp { controls.isMuted = false }
             controller.showOSD(.volume(controls.isMuted ? 0 : Double(next)))
+        case .returnKey:
+            pressReturn()
+        case .escapeKey:
+            let key = DuoKey.special(1, "esc", text: "\u{1b}")
+            press(key)
+            release(key)
+        case .tabKey:
+            let key = DuoKey.special(15, "tab", text: "\t")
+            press(key)
+            release(key)
+        case .interrupt:
+            modifiers[.control] = .latched
+            let key = DuoKey.char(46, "c", "C")
+            press(key)
+            release(key)
+        case .pasteText:
+            guard let text = UIPasteboard.general.string, !text.isEmpty else { return }
+            if linuxTarget != nil, let bridge = controller.linux {
+                bridge.type(text)
+            } else if let input = UIResponder.desktopCurrentFirstResponder as? UIKeyInput {
+                input.insertText(text)
+            }
+        case .terminal:
+            controller.openLinuxApp(LinuxAppID.preferredTerminal)
+        case .files:
+            controller.open(appID: AppID.files, arguments: [:])
+        case .settings:
+            controller.open(appID: AppID.settings, arguments: [:])
+        case .app(let appID):
+            controller.open(appID: appID, arguments: [:])
         }
+    }
+
+    /// Presses and releases one key in the focused Linux window.
+    private func tap(_ code: UInt32) {
+        guard let bridge = controller?.linux else { return }
+        bridge.key(code, pressed: true, focusedSurface: linuxTarget)
+        bridge.key(code, pressed: false, focusedSurface: linuxTarget)
     }
 
     // MARK: The desktop's own text views
@@ -413,6 +447,11 @@ private struct DuoKeyCap: View {
         let showsF = model.showsFunctionKeys
         if showsF, let functionLabel = key.functionLabel {
             Text(functionLabel).font(.system(size: size * 0.36, weight: .medium)).foregroundStyle(DuoDeckColors.label)
+        } else if case .functionSlot(let index) = key.kind {
+            let action = DuoDeckLayout.shared.functionRow[index]
+            Image(systemName: action.symbol(in: model.controller))
+                .font(.system(size: size * 0.38, weight: .medium))
+                .foregroundStyle(action == .none ? DuoDeckColors.secondary.opacity(0.4) : DuoDeckColors.label)
         } else if let symbol = key.symbol {
             VStack(spacing: 1) {
                 Image(systemName: symbol).font(.system(size: size * (key.caption == nil ? 0.38 : 0.3), weight: .medium))
@@ -451,7 +490,7 @@ private struct DuoKeyCap: View {
         switch key.kind {
         case .character(" ", _): return "space"
         case .backspace: return "delete"
-        case .system(let action): return "\(action)"
+        case .functionSlot(let index): return DuoDeckLayout.shared.functionRow[index].title(in: model.controller)
         default: return key.caption ?? key.label
         }
     }

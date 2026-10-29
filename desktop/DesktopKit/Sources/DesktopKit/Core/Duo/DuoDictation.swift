@@ -17,6 +17,8 @@ public final class DuoDictation {
     static let maximumDuration: Duration = .seconds(55)
 
     private(set) var isListening = false
+    /// Hold to talk: the mic was slid up, so it keeps listening after the finger lifts.
+    var isLocked = false
     /// What has been heard so far, shown above the deck.
     private(set) var transcript = ""
     private(set) var problem: String?
@@ -26,9 +28,44 @@ public final class DuoDictation {
     @PerceptionIgnored private var request: SFSpeechAudioBufferRecognitionRequest?
     @PerceptionIgnored private var task: SFSpeechRecognitionTask?
     @PerceptionIgnored private var timeout: Task<Void, Never>?
+    /// Between the button going down and the microphone running (permission checks).
+    @PerceptionIgnored private var isStarting = false
+    /// Released (or cancelled) before the microphone was running: what to do once it is.
+    /// true: cancel, false: type what was heard.
+    @PerceptionIgnored private var pendingCancel: Bool?
 
     func toggle() {
-        if isListening { finish() } else { Task { await start() } }
+        if isListening { finish() } else { begin() }
+    }
+
+    /// Hold to talk: the finger went down on the mic.
+    func begin() {
+        guard !isListening, !isStarting else { return }
+        isLocked = false
+        isStarting = true
+        pendingCancel = nil
+        Task {
+            await start()
+            isStarting = false
+            if let cancelled = pendingCancel {
+                pendingCancel = nil
+                if cancelled { cancel() } else { finish() }
+            }
+        }
+    }
+
+    /// Lets go of the mic: type what was heard, unless the mic was locked on.
+    func release() {
+        if isStarting { pendingCancel = false; return }
+        guard !isLocked else { return }
+        finish()
+    }
+
+    /// Slid left: stop and type nothing.
+    func cancel() {
+        if isStarting { pendingCancel = true; return }
+        transcript = ""
+        finish()
     }
 
     private func start() async {
@@ -79,7 +116,7 @@ public final class DuoDictation {
             let failed = error != nil
             Task { @MainActor in
                 guard let self else { return }
-                if let text { self.transcript = text }
+                if let text, self.isListening { self.transcript = text }
                 if isFinal || (failed && self.isListening) { self.finish() }
             }
         }
@@ -94,6 +131,7 @@ public final class DuoDictation {
     func finish() {
         guard isListening else { return }
         isListening = false
+        isLocked = false
         timeout?.cancel()
         engine?.stop()
         engine?.inputNode.removeTap(onBus: 0)

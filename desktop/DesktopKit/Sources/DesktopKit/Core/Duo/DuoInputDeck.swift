@@ -108,18 +108,35 @@ struct DuoInputDeck: View {
                             withAnimation(DesktopMotion.standard) { trackpadMode.toggle() }
                         }
                     }
-                    barButton("apple.terminal", label: "Terminal") { controller.openLinuxApp(LinuxAppID.preferredTerminal) }
-                    barButton("folder", label: "Files") { controller.open(appID: AppID.files, arguments: [:]) }
+                    customButtons(layout.leftButtons)
                 }
                 Spacer()
-                group {
-                    barButton("return", label: "Return") { controller.duoKeyboard.pressReturn() }
-                    barButton("command", label: "Command Menu") { controller.toggleCommandMenu() }
+                if layout.rightButtons.contains(where: { $0 != .none }) {
+                    group { customButtons(layout.rightButtons) }
                 }
             }
-            micButton(size: height)
+            DuoMicButton(dictation: controller.duoDictation, mode: layout.micMode, size: height)
         }
         .frame(height: height)
+    }
+
+    private let layout = DuoDeckLayout.shared
+
+    /// The buttons chosen in Settings › Laptop Keyboard. Touch and hold one to change them.
+    @ViewBuilder
+    private func customButtons(_ actions: [DuoDeckAction]) -> some View {
+        ForEach(Array(actions.enumerated()).filter { $0.element != .none }, id: \.offset) { _, action in
+            barButton(action.symbol(in: controller), label: action.title(in: controller)) {
+                controller.duoKeyboard.perform(action)
+            }
+            .contextMenu {
+                Button {
+                    controller.open(appID: AppID.settings, arguments: [SettingsApp.pageArgument: SettingsApp.deckPage])
+                } label: {
+                    Label("Customize Keyboard…", systemImage: "slider.horizontal.3")
+                }
+            }
+        }
     }
 
     private func group<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
@@ -140,21 +157,6 @@ struct DuoInputDeck: View {
         .accessibilityLabel(label)
     }
 
-    private func micButton(size: CGFloat) -> some View {
-        let listening = controller.duoDictation.isListening
-        return Button { controller.duoDictation.toggle() } label: {
-            Image(systemName: listening ? "waveform" : "mic.fill")
-                .font(.system(size: size * 0.38, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: size, height: size)
-                .background(Circle().fill(listening ? Color.red : DuoDeckColors.accent))
-                .shadow(color: (listening ? Color.red : DuoDeckColors.accent).opacity(0.5), radius: 8)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(listening ? "Stop dictation and type it" : "Dictate")
-        .accessibilityIdentifier("duo.deck.dictate")
-    }
-
     private var trackpad: some View {
         DuoTrackpad(pointer: controller.duoPointer)
             .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(DuoDeckColors.key))
@@ -169,6 +171,112 @@ struct DuoInputDeck: View {
                     .allowsHitTesting(false)
             }
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+}
+
+/// The deck's microphone. Tap mode: tap to start, tap again to type what was heard. Hold
+/// mode: hold and speak, let go to type it; slide up to lock it on (then tap to finish),
+/// slide left to cancel.
+struct DuoMicButton: View {
+    let dictation: DuoDictation
+    let mode: DuoDeckLayout.MicMode
+    let size: CGFloat
+    static let lockDistance: CGFloat = 60
+    static let cancelDistance: CGFloat = 80
+
+    private enum Touch { case idle, tapping, holding, done }
+    @State private var touch = Touch.idle
+    @State private var offset: CGSize = .zero
+
+    var body: some View {
+        WithPerceptionTracking {
+            let listening = dictation.isListening
+            let holding = touch == .holding
+            ZStack {
+                if holding {
+                    // Where to slide: up to lock, left to cancel.
+                    VStack(spacing: 4) {
+                        Image(systemName: offset.height < -Self.lockDistance * 0.6 ? "lock.fill" : "lock.open")
+                        Image(systemName: "chevron.up").font(.system(size: 10, weight: .bold))
+                    }
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 10)
+                    .background(Capsule().fill(DuoDeckColors.key))
+                    .offset(y: -size * 1.15)
+                    .transition(.opacity)
+                    Label("Slide to cancel", systemImage: "chevron.left")
+                        .font(.caption)
+                        .foregroundStyle(DuoDeckColors.secondary)
+                        .fixedSize()
+                        .offset(x: -size * 1.6)
+                        .transition(.opacity)
+                }
+                Image(systemName: dictation.isLocked ? "lock.fill" : listening ? "waveform" : "mic.fill")
+                    .font(.system(size: size * 0.38, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: size, height: size)
+                    .background(Circle().fill(listening ? Color.red : DuoDeckColors.accent))
+                    .shadow(color: (listening ? Color.red : DuoDeckColors.accent).opacity(0.5), radius: 8)
+                    .scaleEffect(holding ? 1.15 : 1)
+                    .offset(x: holding ? min(offset.width, 0) : 0, y: holding ? min(offset.height, 0) : 0)
+                    .gesture(DragGesture(minimumDistance: 0).onChanged(changed).onEnded { _ in ended() })
+            }
+            .animation(DesktopMotion.quick, value: holding)
+            .accessibilityElement()
+            .accessibilityLabel(accessibilityLabel)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { dictation.toggle() }
+            .accessibilityIdentifier("duo.deck.dictate")
+        }
+    }
+
+    private var accessibilityLabel: String {
+        if dictation.isListening { return "Stop dictation and type it" }
+        return mode == .hold ? "Dictate. Hold to talk" : "Dictate"
+    }
+
+    private func changed(_ value: DragGesture.Value) {
+        switch touch {
+        case .idle:
+            // Hold mode starts listening as the finger lands; a locked mic waits for a tap.
+            if mode == .hold && !dictation.isLocked && !dictation.isListening {
+                touch = .holding
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                dictation.begin()
+            } else {
+                touch = .tapping
+            }
+        case .holding:
+            offset = value.translation
+            if value.translation.height < -Self.lockDistance {
+                touch = .done
+                offset = .zero
+                dictation.isLocked = true
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            } else if value.translation.width < -Self.cancelDistance {
+                touch = .done
+                offset = .zero
+                dictation.cancel()
+                UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            }
+        case .tapping, .done:
+            break
+        }
+    }
+
+    private func ended() {
+        switch touch {
+        case .holding:
+            dictation.release()
+        case .tapping:
+            dictation.toggle()
+        case .idle, .done:
+            break
+        }
+        touch = .idle
+        offset = .zero
     }
 }
 

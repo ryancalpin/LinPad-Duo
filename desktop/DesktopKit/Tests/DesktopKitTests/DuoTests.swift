@@ -98,6 +98,37 @@ final class DuoActionTests: XCTestCase {
     }
 }
 
+// MARK: - Keyboard customization
+
+@MainActor
+final class DuoDeckLayoutTests: XCTestCase {
+    func testDefaultsAndSaving() throws {
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "DuoDeckLayoutTests"))
+        defaults.removePersistentDomain(forName: "DuoDeckLayoutTests")
+        let layout = DuoDeckLayout(defaults: defaults)
+        XCTAssertEqual(layout.functionRow.count, 12)
+        XCTAssertEqual(layout.micMode, .hold)
+        XCTAssertEqual(layout.leftButtons, [.terminal, .files, .none])
+        layout.rightButtons[2] = .app("linux:code")
+        layout.functionRow[0] = .lockScreen
+        layout.micMode = .tap
+        let reloaded = DuoDeckLayout(defaults: defaults)
+        XCTAssertEqual(reloaded.rightButtons[2], .app("linux:code"))
+        XCTAssertEqual(reloaded.functionRow[0], .lockScreen)
+        XCTAssertEqual(reloaded.micMode, .tap)
+        reloaded.reset()
+        XCTAssertEqual(DuoDeckLayout(defaults: defaults).functionRow, DuoDeckLayout.defaultFunctionRow)
+    }
+
+    func testEveryBuiltInActionHasAName() {
+        for action in DuoDeckAction.builtIn {
+            XCTAssertFalse(action.title(in: nil).isEmpty)
+            XCTAssertFalse(action.symbol(in: nil).isEmpty)
+        }
+        XCTAssertEqual(Set(DuoDeckAction.builtIn.map(\.id)).count, DuoDeckAction.builtIn.count)
+    }
+}
+
 // MARK: - Sizes and poses
 
 @MainActor

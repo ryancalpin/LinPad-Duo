@@ -67,6 +67,7 @@ enum SettingsApp {
     static let performancePage = "performance"
     static let backgroundPage = "background"
     static let duoPage = "duo"
+    static let deckPage = "deck"
 
     static func descriptor() -> DesktopAppDescriptor {
         DesktopAppDescriptor(
