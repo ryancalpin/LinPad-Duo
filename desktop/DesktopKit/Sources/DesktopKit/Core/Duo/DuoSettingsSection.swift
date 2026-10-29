@@ -38,6 +38,8 @@ struct DuoSettingsSection: View {
                 Text("Folding").font(.subheadline.weight(.semibold)).foregroundStyle(theme.secondaryText)
                 row("Size Linux apps for each screen", $autoScale, id: "autoScale",
                     "Linux apps get bigger or smaller to suit the outer screen, the inner screen, each half of the fold and a monitor. Adjust each one under Screen Sizes below.")
+                row("Laptop pose keyboard and trackpad", $laptopDeck, id: "laptopDeck",
+                    "Half-open in landscape, the bottom half becomes a keyboard and trackpad for the desktop on the top half. With a keyboard attached only the trackpad shows; with a keyboard and mouse, neither.")
             }
             DuoScaleSettings()
                 .onChangeCompat(of: autoScale) { _, _ in DuoScaling.shared.refresh() }

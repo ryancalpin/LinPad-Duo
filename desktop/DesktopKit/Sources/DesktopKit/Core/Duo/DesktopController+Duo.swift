@@ -4,6 +4,8 @@ import SwiftUI
 extension DesktopController {
     /// Called once from `init`.
     func startDuo() {
+        duoPointer.controller = self
+        duoKeyboard.controller = self
         pose.observe { [weak self] _, _ in self?.duoPoseChanged() }
         duoPoseChanged()
     }

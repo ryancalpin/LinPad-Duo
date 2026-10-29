@@ -123,3 +123,18 @@ Tick these off on the phone. If something's wrong, tell Claude Code what you did
 - [ ] Menus and pop-ups inside a resized app appear in the right place and at the same size.
 - Note: every Linux app resizes live, because LinPad tells the app its new size and it redraws.
   If one doesn't (old X11 apps can be stubborn), tell Claude Code which.
+
+### Phase 4: laptop pose
+- [ ] Half-open the phone sideways like a laptop. The desktop moves to the top half; the
+      bottom half shows a keyboard and a trackpad.
+- [ ] Open foot (Terminal), type `echo hello` with the bottom keyboard and press return.
+- [ ] `ctrl` then `c` stops a running command (try `sleep 100`). Tap `ctrl` twice to lock it.
+- [ ] `fn` swaps the number row for F1–F12.
+- [ ] Trackpad: one finger moves the pointer, tap clicks, two-finger tap right-clicks, two
+      fingers scroll, tap then drag selects text.
+- [ ] Connect a Bluetooth keyboard: only the trackpad stays. Add a mouse: both go away.
+- [ ] Open the phone flat: back to the normal desktop, windows where they were.
+- Limits: the trackpad clicks inside Linux apps. On LinPad's own panels, title bars and
+  built-in apps a click only brings that window forward (iOS doesn't let an app fake a
+  touch), so touch those on the top half directly. The built-in Terminal app may still
+  bring up the iPhone's own keyboard; foot (the Linux terminal) doesn't.

@@ -23,6 +23,7 @@ public struct DesktopRootView: View {
     @AppStorage(DesktopSettings.kylinMenuFullScreenKey) private var kylinMenuFullScreen = false
     @AppStorage(DesktopShortcutModifier.storageKey) private var shortcutModifier = DesktopShortcutModifier.controlOption
     @AppStorage(DuoSettings.poseOverlayKey) private var showsPoseOverlay = false
+    @AppStorage(DuoSettings.laptopDeckKey) private var laptopDeckEnabled = true
     @Environment(\.colorScheme) private var systemColorScheme
 
     public init(host: any LinuxHost, apps: [DesktopAppDescriptor]) {
@@ -52,7 +53,8 @@ public struct DesktopRootView: View {
                     controller.wallpapers.startSlideshowIfNeeded()
                 }
 
-            shell
+            DuoLaptopLayout(controller: controller, isActive: showsLaptopDeck,
+                            showsKeyboard: !controller.keyboard.isConnected) { shell }
                 .overlay {
                     if controller.isOnboardingPresented {
                         OnboardingView(controller: controller)
@@ -192,6 +194,12 @@ public struct DesktopRootView: View {
         .onAppear {
             controller.windowManager.outerGapOverride = controller.styling.outerGap.map { CGFloat($0) }
         }
+    }
+
+    /// Laptop pose: the bottom half becomes a keyboard and trackpad, unless both are attached.
+    private var showsLaptopDeck: Bool {
+        laptopDeckEnabled && controller.pose.pose == .laptop
+            && !(controller.keyboard.isConnected && controller.keyboard.hasPointer)
     }
 
     private var followsSystemThemeMode: Bool {
@@ -347,6 +355,7 @@ public struct DesktopRootView: View {
                     if let linux = controller.linux {
                         LinuxPopupLayerHost(bridge: linux)
                     }
+                    DuoPointerOverlay(pointer: controller.duoPointer)
                 }
                 .coordinateSpace(name: DesktopCoordinateSpace.name)
                 .onAppear {

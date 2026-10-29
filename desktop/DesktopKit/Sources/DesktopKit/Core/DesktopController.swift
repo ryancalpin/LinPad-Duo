@@ -91,6 +91,9 @@ final class DesktopController {
     let keyboard = HardwareKeyboardMonitor()
     /// How the iPhone Duo is folded (Core/Duo); `.noHinge` everywhere else.
     let pose = PoseMonitor()
+    /// The on-screen trackpad's pointer and keyboard (laptop pose, monitor mode).
+    let duoPointer = DuoVirtualPointer()
+    let duoKeyboard = DuoKeyboardModel()
     private(set) var style = DesktopStyle.stored(UserDefaults.standard.string(forKey: DesktopStyle.storageKey) ?? "")
     let icons: DesktopIconStore
     @PerceptionIgnored let input = DesktopInputCoordinator()
