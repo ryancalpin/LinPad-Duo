@@ -147,18 +147,20 @@ Tick these off on the phone. If something's wrong, tell Claude Code what you did
 
 ### Phase 4: laptop pose
 - [ ] Half-open the phone sideways like a laptop. The desktop moves to the top half; the
-      bottom half shows a keyboard and a trackpad.
-- [ ] Open foot (Terminal), type `echo hello` with the bottom keyboard and press return.
-- [ ] `ctrl` then `c` stops a running command (try `sleep 100`). Tap `ctrl` twice to lock it.
-- [ ] `fn` swaps the number row for F1–F12.
-- [ ] Trackpad: one finger moves the pointer, tap clicks, two-finger tap right-clicks, two
-      fingers scroll, tap then drag selects text.
-- [ ] Connect a Bluetooth keyboard: only the trackpad stays. Add a mouse: both go away.
+      bottom half becomes a MacBook-style keyboard.
+- [ ] Open foot (Terminal), type `echo hello` and press return.
+- [ ] `control` then `C` stops a running command (try `sleep 100`). Tap a modifier twice to
+      lock it (a green dot shows); a third tap releases it. `caps lock` lights up too.
+- [ ] Top row: brightness, overview, search (the app launcher), dictation, Do Not Disturb,
+      media keys and volume. The **F1–F12** switch (or `fn` for one key) makes them F-keys.
+- [ ] The big blue mic: tap, say something, tap again. The words are typed into the focused app.
+- [ ] The hand button (bottom left) swaps the keyboard for a trackpad: one finger moves the
+      pointer, tap clicks, two-finger tap right-clicks, two fingers scroll, tap then drag
+      selects. Clicks work in Linux apps and on LinPad's own buttons, panels and title bars.
+- [ ] Bottom bar: Terminal and Files open those apps; ↩ is Return; ⌘ opens the Command Menu.
+- [ ] Connect a Bluetooth keyboard: the trackpad takes the keyboard's place. Add a mouse: the
+      deck goes away and the desktop fills the screen.
 - [ ] Open the phone flat: back to the normal desktop, windows where they were.
-- Limits: the trackpad clicks inside Linux apps. On LinPad's own panels, title bars and
-  built-in apps a click only brings that window forward (iOS doesn't let an app fake a
-  touch), so touch those on the top half directly. The built-in Terminal app may still
-  bring up the iPhone's own keyboard; foot (the Linux terminal) doesn't.
 
 ### Phase 5: closing to the outer screen
 - [ ] With two or three windows open, start `sleep 30; echo finished` in foot, then close the phone.

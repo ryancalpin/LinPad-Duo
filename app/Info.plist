@@ -59,6 +59,8 @@
 	<string>Programs running in iSH will be allowed to track your location in the background.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>With Settings › Background set to “Always”, location updates keep Linux running while LinPad is in the background; LinPad does not keep or share where you are. Linux programs that read /dev/location can also see your location.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>The microphone button on LinPad's on-screen keyboard turns what you say into text in the focused app. Recognition runs on the iPhone when it can.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSUserActivityTypes</key>

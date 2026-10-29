@@ -6,6 +6,7 @@ extension DesktopController {
     func startDuo() {
         duoPointer.controller = self
         duoKeyboard.controller = self
+        duoDictation.controller = self
         DuoDisplayRouter.shared.controller = self
         pose.observe { [weak self] _, _ in self?.duoPoseChanged() }
         duoPoseChanged()

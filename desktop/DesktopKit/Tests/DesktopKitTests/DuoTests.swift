@@ -84,10 +84,17 @@ final class DuoActionTests: XCTestCase {
     }
 
     func testKeyboardLayout() {
-        let keys = DuoKey.rows.flatMap { $0 }
+        let keys = DuoKey.functionRow + DuoKey.rows.flatMap { $0 } + [DuoKey.left, DuoKey.up, DuoKey.down, DuoKey.right]
         XCTAssertEqual(Set(keys.map(\.id)).count, keys.count)
-        XCTAssertTrue(keys.contains { $0.code == 1 } && keys.contains { $0.code == 29 })
+        XCTAssertTrue(keys.contains { $0.code == 1 } && keys.contains { $0.code == 29 } && keys.contains { $0.code == 125 })
         XCTAssertEqual(DuoKey.char(30, "a", "A").text(shifted: true), "A")
+        XCTAssertEqual(DuoKey.char(30, "a", "A").label, "A", "letters show capitals, as on a Mac")
+        XCTAssertEqual(DuoKey.char(2, "1", "!").shiftedHint, "!")
+        // Every row of the main block is the same width, so the keys line up.
+        let widths = DuoKey.rows.dropLast().map { $0.reduce(0) { $0 + $1.width } }
+            + [DuoKey.rows.last!.reduce(0) { $0 + $1.width } + DuoKey.arrowsWidth]
+        for width in widths { XCTAssertEqual(width, 14.5, accuracy: 0.001) }
+        XCTAssertEqual(DuoKey.functionRow.compactMap(\.functionLabel).count, 12)
     }
 }
 

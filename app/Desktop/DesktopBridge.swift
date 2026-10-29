@@ -1,3 +1,4 @@
+import AVFoundation
 import DesktopKit
 import SwiftUI
 import UIKit
@@ -50,6 +51,15 @@ final class DesktopBridge: NSObject {
         // Settings › Background › "While jobs run", and jobs that carry on in other apps.
         DuoJobCenter.shared.observe { _, _ in ISHBackgroundKeeper.shared.jobsChanged() }
         if #available(iOS 26.0, *) { DuoContinuedJobs.shared.start() }
+        // The deck's dictation shares the audio session with the Linux microphone.
+        DuoDictation.prepareSession = {
+            guard !ISHMicBridge.shared.isCapturing else { return false }
+            try? ISHMicBridge.configureSession(AVAudioSession.sharedInstance(), recording: true)
+            return true
+        }
+        DuoDictation.restoreSession = {
+            try? ISHMicBridge.configureSession(AVAudioSession.sharedInstance(), recording: ISHMicBridge.shared.isCapturing)
+        }
         return controller
     }
 }

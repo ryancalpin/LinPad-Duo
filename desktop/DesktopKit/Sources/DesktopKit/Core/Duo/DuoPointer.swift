@@ -6,9 +6,10 @@ import UIKit
 /// trackpad). It lives in desktop coordinates and is drawn by `DuoPointerOverlay`.
 ///
 /// Over a Linux window it sends real pointer events (motion, buttons, scrolling) through
-/// the bridge, the same path a hardware mouse takes. iOS has no public way to fake a touch,
-/// so over the desktop's own controls (panels, title bars, built-in apps) a click only
-/// brings the window under the pointer to the front; touch those controls directly.
+/// the bridge, the same path a hardware mouse takes. Over the desktop's own controls
+/// (panels, docks, title-bar buttons, built-in apps) a click presses the control under
+/// the pointer through iOS's accessibility interface, the way Voice Control and Switch
+/// Control press buttons; anything that isn't a control brings its window to the front.
 @Perceptible @MainActor
 final class DuoVirtualPointer {
     private enum Button {
@@ -57,7 +58,7 @@ final class DuoVirtualPointer {
         show()
         let button = right ? Button.right : Button.left
         guard let (surface, point) = linuxTarget() else {
-            focusWindowUnderPointer()
+            if right || !activateControlUnderPointer() { focusWindowUnderPointer() }
             return
         }
         focusWindowUnderPointer()
@@ -129,6 +130,42 @@ final class DuoVirtualPointer {
         guard let reference = controller?.input.referenceView,
               let view = controller?.linux?.surface(withID: surfaceID)?.view, view.window != nil else { return nil }
         return reference.convert(location, to: view)
+    }
+
+    /// Presses the button (or other control) under the pointer with `accessibilityActivate()`,
+    /// public UIKit API that SwiftUI answers for its buttons, toggles and tap gestures.
+    private func activateControlUnderPointer() -> Bool {
+        guard let reference = controller?.input.referenceView, let window = reference.window else { return false }
+        let windowPoint = reference.convert(location, to: window)
+        let screenPoint = UIAccessibility.convertToScreenCoordinates(CGRect(origin: location, size: .zero), in: reference).origin
+        var view = window.hitTest(windowPoint, with: nil)
+        // The hit view itself, or the nearest container above it that lists accessibility elements.
+        while let current = view {
+            if let element = Self.deepestElement(at: screenPoint, in: current, depth: 0), element.accessibilityActivate() {
+                return true
+            }
+            view = current.superview
+        }
+        return false
+    }
+
+    /// The innermost accessibility element whose frame holds the point, searching the
+    /// container's elements topmost (last) first.
+    private static func deepestElement(at point: CGPoint, in container: NSObject, depth: Int) -> NSObject? {
+        guard depth < 24 else { return nil }
+        let children: [NSObject]
+        if let elements = container.accessibilityElements as? [NSObject] {
+            children = elements
+        } else {
+            let count = container.accessibilityElementCount()
+            children = count == NSNotFound || count <= 0 ? []
+                : (0..<count).compactMap { container.accessibilityElement(at: $0) as? NSObject }
+        }
+        for child in children.reversed() where child.accessibilityFrame.contains(point) {
+            if let deeper = deepestElement(at: point, in: child, depth: depth + 1) { return deeper }
+            if child.isAccessibilityElement { return child }
+        }
+        return nil
     }
 
     private func focusWindowUnderPointer() {
