@@ -45,6 +45,25 @@ command-line tool built first and takes about an hour, so only do it if you chan
 
 ## 3. Build the app
 
+**Paid account (what Ryan uses):** one command builds a signed app with the hinge code, the
+GPU libraries and the Linux system inside. It signs with the App Store Connect API key on this
+Mac, so no Apple ID is needed in Xcode:
+
+```sh
+ASC_KEY_ID=XC34FF49ML ASC_ISSUER_ID=fd826a8b-f5db-43d1-bac1-5ef15fe201e7 \
+  ASC_KEY_PATH=~/.appstoreconnect/private_keys/AuthKey_XC34FF49ML.p8 APPLE_TEAM_ID=X6PM238Q98 \
+  release/duo-build-ipa.sh
+```
+
+- The first build takes about 20 minutes; later ones reuse most of the work.
+- The app keeps its Linux files in the app group `group.com.ryancalpin.linpadduo.arm64`. It is
+  registered and assigned to the app ID already; Xcode can't do that by itself with an API key
+  (`asc web app-groups create` / `assign` does, after `asc web auth login`).
+- It also needs `brew install libarchive coreutils pkgconf` and `pip3 install --user mako` for
+  the GPU libraries.
+
+**Free account:**
+
 ```sh
 export PATH=/opt/homebrew/opt/lld/bin:/opt/homebrew/opt/llvm/bin:$PATH
 xcodebuild -skipMacroValidation -project iSH.xcodeproj -scheme iSH-ARM64 \
@@ -62,12 +81,22 @@ release/embed-rootfs.sh --device "build-ios-release/Release-iphoneos/iSH ARM64.a
   that gets fixed, delete the line `.define("LINPAD_HINGE_API")` in
   `desktop/DesktopKit/Package.swift`. The app then guesses the pose from the screen size alone
   (closed and open work; book, laptop and tent don't).
-- **Paid account only, for more memory:** in `app/App.xcconfig`, change
-  `app/iSH.entitlements` to `app/iSH-MoreMemory.entitlements`, then build again.
+- **Paid account only, for more memory:** add `LINPAD_ENTITLEMENTS=app/iSH-MoreMemory.entitlements`
+  to the `xcodebuild` line (the one-command build above does this for you).
 
 ## 4. Install on the phone
 
-Plug the phone into the Mac, unlock it and tap **Trust**. Then:
+**After a signed build (paid account):**
+
+```sh
+release/duo-install.sh
+```
+
+It finds the iPhone Duo, installs the new build and opens it. The first time, plug the phone in
+(unlock it, tap **Trust**). After that it works **over Wi-Fi**: the phone just has to be
+unlocked and on the same network as the Mac. No cable needed for later changes.
+
+**Free account:** plug the phone into the Mac, unlock it and tap **Trust**. Then:
 
 ```sh
 idevice_id -l          # prints the phone's ID; copy it

@@ -6,7 +6,8 @@
 #
 # Two kinds of IPA:
 # * Signed (a paid Apple Developer account): with ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (an
-#   App Store Connect API key, Admin) and APPLE_TEAM_ID set, Xcode signs it for development
+#   App Store Connect API key, Admin; or ASC_KEY_PATH, the .p8 file on this Mac) and
+#   APPLE_TEAM_ID set, Xcode signs it for development
 #   with your team, for every device registered in your account. It installs straight from
 #   Safari (build-duo/site has the install page and manifest) and lasts a year. Development
 #   signing keeps get-task-allow, which fast mode (StikDebug) needs.
@@ -65,20 +66,26 @@ COMMON=(-skipMacroValidation -project iSH.xcodeproj -scheme iSH-ARM64 -configura
         -destination generic/platform=iOS IPHONEOS_DEPLOYMENT_TARGET=16.0
         ISH_JIT_BUILD=enabled ISH_VIRTGPU=enabled CURRENT_PROJECT_VERSION="$BUILD_NUMBER")
 
-if [ -n "${ASC_KEY_ID:-}" ] && [ -n "${ASC_ISSUER_ID:-}" ] && [ -n "${ASC_KEY_P8:-}" ] && [ -n "${APPLE_TEAM_ID:-}" ]; then
+if [ -n "${ASC_KEY_ID:-}" ] && [ -n "${ASC_ISSUER_ID:-}" ] && [ -n "${ASC_KEY_P8:-}${ASC_KEY_PATH:-}" ] && [ -n "${APPLE_TEAM_ID:-}" ]; then
     say "App (Release, signed for development with your team)"
-    KEY=$WORK/AuthKey.p8
-    (umask 077 && printf '%s\n' "$ASC_KEY_P8" > "$KEY")
-    trap 'rm -f "$KEY"' EXIT
+    if [ -n "${ASC_KEY_PATH:-}" ]; then
+        KEY=$ASC_KEY_PATH
+    else
+        KEY=$WORK/AuthKey.p8
+        (umask 077 && printf '%s\n' "$ASC_KEY_P8" > "$KEY")
+        trap 'rm -f "$KEY"' EXIT
+    fi
     AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY"
           -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
     ARCHIVE=$WORK/LinPad-Duo.xcarchive
     archive() {
         rm -rf "$ARCHIVE"
         # The Linux system goes in through the "Download Root" build phase, before signing.
-        xcodebuild archive "${COMMON[@]}" -archivePath "$ARCHIVE" SYMROOT="$WORK/products" \
+        # No SYMROOT here: archive then can't find its BuildProductsPath. LINPAD_ENTITLEMENTS
+        # only reaches the app target (app/App.xcconfig).
+        xcodebuild archive "${COMMON[@]}" -archivePath "$ARCHIVE" \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY="Apple Development" \
-            CODE_SIGN_ENTITLEMENTS="$1" LINPAD_ROOTFS="$ROOTFS" "${AUTH[@]}"
+            LINPAD_ENTITLEMENTS="$1" LINPAD_ROOTFS="$ROOTFS" "${AUTH[@]}"
     }
     ENTITLEMENTS=${DUO_ENTITLEMENTS:-app/iSH-MoreMemory.entitlements}
     if ! archive "$ENTITLEMENTS"; then

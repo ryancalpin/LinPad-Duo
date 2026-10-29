@@ -11,7 +11,10 @@ ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
 // With a paid Apple Developer account, use app/iSH-MoreMemory.entitlements instead: it adds
 // increased-memory-limit, so iOS lets LinPad use more of the phone's memory before closing it.
 // A free account cannot sign that entitlement, so it is not the default.
-CODE_SIGN_ENTITLEMENTS = app/iSH.entitlements
+// Pick it with LINPAD_ENTITLEMENTS on the xcodebuild command line: setting
+// CODE_SIGN_ENTITLEMENTS there would also apply it to every Swift package target.
+LINPAD_ENTITLEMENTS = app/iSH.entitlements
+CODE_SIGN_ENTITLEMENTS = $(LINPAD_ENTITLEMENTS)
 
 HEADER_SEARCH_PATHS = $(inherited) $(SRCROOT) $(SRCROOT)/deps/libarchive/libarchive
 // AccessibilityFixes.m contains a static constructor that we don't want removed
