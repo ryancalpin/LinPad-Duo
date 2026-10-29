@@ -22,6 +22,7 @@ public struct DesktopRootView: View {
     @AppStorage(DesktopSettings.windowMetricsKey) private var metricsID = ""
     @AppStorage(DesktopSettings.kylinMenuFullScreenKey) private var kylinMenuFullScreen = false
     @AppStorage(DesktopShortcutModifier.storageKey) private var shortcutModifier = DesktopShortcutModifier.controlOption
+    @AppStorage(DuoSettings.poseOverlayKey) private var showsPoseOverlay = false
     @Environment(\.colorScheme) private var systemColorScheme
 
     public init(host: any LinuxHost, apps: [DesktopAppDescriptor]) {
@@ -87,6 +88,12 @@ public struct DesktopRootView: View {
                     }
                 }
         }
+        .overlay(alignment: .top) {
+            if showsPoseOverlay {
+                DuoPoseOverlay(monitor: controller.pose)
+            }
+        }
+        .duoPoseTracking(controller.pose)
         .onChangeCompat(of: styleID, initial: true) { _, id in
             let style = DesktopStyle.stored(id)
             controller.applyStyle(style, dark: (DesktopAppearance(rawValue: appearanceID) ?? .styleDefault)

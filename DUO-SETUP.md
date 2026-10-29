@@ -103,3 +103,11 @@ Tick these off on the phone. If something's wrong, tell Claude Code what you did
 - [ ] Settings › Fast Mode › Status: note whether it says fast mode or Compatibility mode.
 - [ ] Background check: Settings › Background › "Always". Start `sleep 600; echo done` in a
       terminal, switch to another app for 10 minutes, come back. Did it print `done`?
+
+### Phase 2: pose detection
+- [ ] Settings › iPhone Duo › "Show pose and hinge angle" on. A label appears at the top.
+- [ ] Fold through each pose and check the name: **Closed** (outer screen), **Flat**, **Book**
+      (half-open, upright), **Laptop** (half-open, sideways), **Tent** (standing on its edges,
+      outer screen showing).
+- [ ] Hold the hinge near the point where book becomes flat: the name doesn't flicker.
+- [ ] If it always says "No hinge", the hinge code was switched off for the build (step 3).

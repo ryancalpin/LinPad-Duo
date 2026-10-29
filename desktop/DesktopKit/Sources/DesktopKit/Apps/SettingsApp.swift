@@ -66,6 +66,7 @@ enum SettingsApp {
     static let idlePage = "screensaver"
     static let performancePage = "performance"
     static let backgroundPage = "background"
+    static let duoPage = "duo"
 
     static func descriptor() -> DesktopAppDescriptor {
         DesktopAppDescriptor(
@@ -187,6 +188,8 @@ struct SettingsAppView: View {
                                 if let desktopController { WallpaperAutoMatchToggle(model: desktopController.wallpaperMatch).padding(.horizontal, 4) }
                             }
                             desktopSection
+                            DuoSettingsSection(controller: desktopController)
+                                .id(SettingsApp.duoPage)
                             PerformanceSettingsSection(host: host)
                                 .id(SettingsApp.performancePage)
                             MemorySettingsSection(host: host)

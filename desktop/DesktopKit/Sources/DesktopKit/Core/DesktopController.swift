@@ -89,6 +89,8 @@ final class DesktopController {
     /// The workspace a window dragged in the overview would land on.
     var overviewDropHover: Int?
     let keyboard = HardwareKeyboardMonitor()
+    /// How the iPhone Duo is folded (Core/Duo); `.noHinge` everywhere else.
+    let pose = PoseMonitor()
     private(set) var style = DesktopStyle.stored(UserDefaults.standard.string(forKey: DesktopStyle.storageKey) ?? "")
     let icons: DesktopIconStore
     @PerceptionIgnored let input = DesktopInputCoordinator()
