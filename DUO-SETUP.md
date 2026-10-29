@@ -162,3 +162,16 @@ Tick these off on the phone. If something's wrong, tell Claude Code what you did
 - [ ] Tap the board: the desktop shows. Close and re-tent the phone: the board is back.
 - [ ] `notify-phone` commands: `start`, `update`, `done`, `fail`, `run` (type `notify-phone`
       on its own to see how to use them).
+
+### Phase 8: USB devices
+- [ ] Plug in a USB stick. Settings › USB › Connect Drive…, pick the stick under Locations.
+- [ ] In foot: `ls /mnt/usb` (or `ls ~/USB`) shows it. Copy a file onto it.
+- [ ] Settings › USB › Eject, then unplug. Plug it into a computer: the file is there.
+- [ ] Connect a game controller (Bluetooth or USB). Settings › USB lists it. In a Linux game
+      or app, the D-pad moves and A presses Space.
+- [ ] Plug in USB headphones or a USB mic: Linux sound and recording use them (iOS switches
+      on its own).
+- [ ] A USB keyboard, mouse and Ethernet adapter still work.
+- Not possible on iPhone: serial cables, Arduinos and printers that need drivers. iOS
+  doesn't let apps reach USB devices directly. A real Linux joystick device would need the
+  emulator's kernel changed; controllers type keys instead.

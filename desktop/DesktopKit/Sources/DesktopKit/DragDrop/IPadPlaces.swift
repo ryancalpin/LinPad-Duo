@@ -45,6 +45,8 @@ final class IPadPlaceStore {
     static let shared = IPadPlaceStore()
     static let storageKey = "desktop.ipadPlaces"
     static let mountRoot = "/mnt/ipad"
+    /// USB drives connected from Settings › USB Drives (Core/Duo/DuoUSB.swift).
+    static let usbMountRoot = "/mnt/usb"
 
     private(set) var places: [IPadPlace] = []
     @PerceptionIgnored private let defaults: UserDefaults
@@ -75,10 +77,15 @@ final class IPadPlaceStore {
     }
 
     /// A free mount point for a folder name: "/mnt/ipad/Documents", then "Documents (2)".
-    func mountPoint(for folderName: String) -> String {
+    func mountPoint(for folderName: String, under root: String = IPadPlaceStore.mountRoot) -> String {
         let clean = folderName.replacingOccurrences(of: "/", with: "-").trimmingCharacters(in: .whitespaces)
-        let taken = Set(places.map { AppPath.lastComponent($0.mountPoint) })
-        return AppPath.join(Self.mountRoot, FileNaming.unique(clean.isEmpty ? "Folder" : clean, existing: taken))
+        let taken = Set(places.filter { AppPath.parent(of: $0.mountPoint) == root }.map { AppPath.lastComponent($0.mountPoint) })
+        return AppPath.join(root, FileNaming.unique(clean.isEmpty ? "Folder" : clean, existing: taken))
+    }
+
+    /// Places under /mnt/usb.
+    var usbDrives: [IPadPlace] {
+        places.filter { AppPath.parent(of: $0.mountPoint) == Self.usbMountRoot }
     }
 
     /// Places the host no longer has mounted.
@@ -89,19 +96,19 @@ final class IPadPlaceStore {
     // MARK: Adding and removing
 
     /// Shows the folder picker, mounts the choice into the guest and returns its mount point.
-    func addFolder(host: any LinuxHost) async throws -> String? {
+    func addFolder(host: any LinuxHost, under root: String = IPadPlaceStore.mountRoot) async throws -> String? {
         guard host is any HostDirectoryMounting else { throw HostMountError(code: -19) }
         guard let url = await FolderPicker.pick() else { return nil }
-        return try await addFolder(url, host: host)
+        return try await addFolder(url, host: host, under: root)
     }
 
     /// Mounts a folder URL (from the picker, or a test) and remembers it.
-    func addFolder(_ url: URL, host: any LinuxHost) async throws -> String {
+    func addFolder(_ url: URL, host: any LinuxHost, under root: String = IPadPlaceStore.mountRoot) async throws -> String {
         guard let mounter = host as? any HostDirectoryMounting else { throw HostMountError(code: -19) }
         let accessing = url.startAccessingSecurityScopedResource()
         defer { if accessing { url.stopAccessingSecurityScopedResource() } }
         let bookmark = (try? url.bookmarkData()) ?? Data()
-        let point = mountPoint(for: url.lastPathComponent)
+        let point = mountPoint(for: url.lastPathComponent, under: root)
         try await prepareMountPoint(point, host: host)
         try mounter.mountHostDirectory(url, at: point)
         add(IPadPlace(name: url.lastPathComponent, mountPoint: point, bookmark: bookmark))
@@ -128,12 +135,13 @@ final class IPadPlaceStore {
         remove(place.mountPoint)
     }
 
-    /// The mount point directory, and ~/iPad pointing at /mnt/ipad for Linux apps.
+    /// The mount point directory, and ~/iPad pointing at /mnt/ipad (~/USB at /mnt/usb) for Linux apps.
     private func prepareMountPoint(_ point: String, host: any LinuxHost) async throws {
-        let link = AppPath.join(host.homeDirectory, "iPad")
+        let root = AppPath.parent(of: point)
+        let link = AppPath.join(host.homeDirectory, root == Self.usbMountRoot ? "USB" : "iPad")
         let result = await host.run("""
             mkdir -p -- \(point.shellQuoted) || exit 1
-            [ -e \(link.shellQuoted) ] || ln -s \(Self.mountRoot) \(link.shellQuoted)
+            [ -e \(link.shellQuoted) ] || ln -s \(root.shellQuoted) \(link.shellQuoted)
             """, cwd: nil, stdin: nil)
         guard result.succeeded else { throw LinuxHostError.commandFailed(result) }
     }

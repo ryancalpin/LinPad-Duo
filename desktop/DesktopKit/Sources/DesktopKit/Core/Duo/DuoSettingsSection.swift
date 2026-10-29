@@ -49,6 +49,11 @@ struct DuoSettingsSection: View {
             }
             DuoScaleSettings()
                 .onChangeCompat(of: autoScale) { _, _ in DuoScaling.shared.refresh() }
+            SettingsSection(title: "Phone Features", symbol: "iphone") {
+                row("Controllers type keys", $controllerKeys, id: "controllerKeys",
+                    "A game controller presses keys in the focused Linux app: the D-pad and left stick are the arrow keys, A is Space, B is Escape, X is Return, Y is Tab, the shoulders are Page Up and Down, the triggers Shift and Ctrl.")
+            }
+            if let controller { DuoUSBSettingsSection(host: controller.host) }
         }
     }
 

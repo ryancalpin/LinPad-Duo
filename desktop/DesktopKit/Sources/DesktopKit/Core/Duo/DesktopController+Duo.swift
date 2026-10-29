@@ -8,6 +8,7 @@ extension DesktopController {
         duoKeyboard.controller = self
         pose.observe { [weak self] _, _ in self?.duoPoseChanged() }
         duoPoseChanged()
+        DuoControllerKeys.shared.start(controller: self)
     }
 
     /// Once Linux has booted: the Duo's Linux commands and the job list.
