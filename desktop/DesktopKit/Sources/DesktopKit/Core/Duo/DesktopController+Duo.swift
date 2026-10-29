@@ -16,6 +16,11 @@ extension DesktopController {
     func startDuoServices() {
         Task { await DuoGuestTools.install(on: host) }
         let jobs = DuoJobCenter.shared
+        jobs.onLeftoverJobs = { [weak self] leftovers in
+            let names = leftovers.map { "“\($0.title)”" }.joined(separator: ", ")
+            self?.notify("\(names) stopped when iOS closed LinPad. Start \(leftovers.count == 1 ? "it" : "them") again; your windows are back where they were.",
+                         action: DesktopToast.Action(title: "OK") {}, lifetime: .seconds(30))
+        }
         DuoAskService.shared.start(guestRoot: (host as? any LinuxGraphicsHost)?.guestRootURL)
         jobs.onTick.append { DuoAskService.shared.poll() }
         jobs.start(host: host)

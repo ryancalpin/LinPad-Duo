@@ -47,6 +47,9 @@ final class DesktopBridge: NSObject {
         _ = DuoExternalDisplaySceneDelegate.self
         // notify-phone jobs in the Dynamic Island and on the Lock Screen.
         if #available(iOS 16.2, *) { DuoLiveActivities.shared.start() }
+        // Settings › Background › "While jobs run", and jobs that carry on in other apps.
+        DuoJobCenter.shared.observe { _, _ in ISHBackgroundKeeper.shared.jobsChanged() }
+        if #available(iOS 26.0, *) { DuoContinuedJobs.shared.start() }
         return controller
     }
 }

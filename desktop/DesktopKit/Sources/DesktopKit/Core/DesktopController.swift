@@ -98,6 +98,8 @@ final class DesktopController {
     let duoGuard = DuoGuard()
     let appLock = DuoAppLock()
     @PerceptionIgnored var duoWarnedAboutRemoteLogin = false
+    /// Settings › Run on My PC.
+    @PerceptionIgnored private(set) lazy var remotePC = DuoRemotePC(controller: self)
     private(set) var style = DesktopStyle.stored(UserDefaults.standard.string(forKey: DesktopStyle.storageKey) ?? "")
     let icons: DesktopIconStore
     @PerceptionIgnored let input = DesktopInputCoordinator()

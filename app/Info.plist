@@ -103,6 +103,11 @@
 	<array>
 		<string>audio</string>
 		<string>location</string>
+		<string>processing</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER).linuxjob.*</string>
 	</array>
 	<key>UIFileSharingEnabled</key>
 	<true/>

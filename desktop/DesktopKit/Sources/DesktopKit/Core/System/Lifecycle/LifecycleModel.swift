@@ -9,6 +9,9 @@ public enum BackgroundExecution: String, CaseIterable, Identifiable, Sendable {
     case off
     /// Linux keeps running while a Linux app plays (or records) sound, like a music app.
     case whileAudioPlays
+    /// Linux keeps running while a `notify-phone` job runs (LinPad Duo), through background
+    /// location like `always`, and stops when the last job ends.
+    case whileJobsRun
     /// Linux always keeps running, through iPadOS's background location updates.
     case always
 
@@ -21,6 +24,7 @@ public enum BackgroundExecution: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .off: "Off"
         case .whileAudioPlays: "While audio plays"
+        case .whileJobsRun: "While jobs run"
         case .always: "Always"
         }
     }
@@ -31,10 +35,15 @@ public enum BackgroundExecution: String, CaseIterable, Identifiable, Sendable {
             "Linux pauses about 30 seconds after LinPad leaves the screen. Sound from Linux stops."
         case .whileAudioPlays:
             "Music and videos keep playing with the screen locked or in another app, and Linux keeps running while they do. When the sound stops, Linux pauses about 30 seconds later."
+        case .whileJobsRun:
+            "Linux keeps running in the background while a job started with notify-phone runs (and while audio plays), then pauses once the last job ends. Like Always, this uses iOS's background location, so LinPad asks for coarse location and the blue indicator shows while a job runs. LinPad does not read or store where you are. Uses more battery while a job runs."
         case .always:
             "Linux keeps running in the background, for example for long builds, downloads or servers. iPadOS only allows this to apps that use location, so LinPad asks for coarse location and the blue location indicator is shown. LinPad does not read or store where you are. Uses more battery."
         }
     }
+
+    /// Whether the mode keeps Linux awake through background location.
+    public var usesLocation: Bool { self == .always || self == .whileJobsRun }
 
     public static var stored: BackgroundExecution {
         stored(in: .standard)

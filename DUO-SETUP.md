@@ -242,3 +242,19 @@ Tick these off on the phone. If something's wrong, tell Claude Code what you did
   takes 8–12 s to open and Thunar 1.3 s. Fast mode (step 5) is what makes the biggest
   difference. Keeping Firefox or VS Code running in the background would cost 1–2 GB of
   memory each, which on a phone gets LinPad closed by iOS, so I didn't add that.
+
+### Phase 12: staying alive in the background
+- [ ] Settings › Background › **While jobs run** (allow location when asked).
+      Run `notify-phone run "Long test" -- sleep 1200` (20 minutes), switch to other apps,
+      lock the phone. The blue location arrow shows while it runs. Come back after 20 minutes:
+      the job shows Done in the tent board or Live Activity. After it ends the blue arrow goes.
+- [ ] Settings › Safety and Battery › "Keep jobs running in other apps" on (iOS 26 or later):
+      start a job, switch apps; iOS shows its own progress banner for it.
+- [ ] Force-close LinPad in the app switcher during a job, then open it: your windows come
+      back, and a message says the job stopped when iOS closed LinPad.
+- [ ] Run on My PC (Settings › Run on My PC): fill in your PC's address and user, tap Save,
+      then Set Up Key… (a terminal asks for the PC's password once). Send `sleep 60; echo done`.
+      Close LinPad; come back after a minute; the job says Finished with "done" in its output.
+      "Open in Terminal" shows it live.
+- If "Keep jobs running" never shows iOS's banner: Apple may want the job names in Info.plist
+  written differently. Tell Claude Code; the line is `BGTaskSchedulerPermittedIdentifiers`.

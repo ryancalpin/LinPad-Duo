@@ -78,9 +78,13 @@ struct DuoSettingsSection: View {
                 if let controller { DuoGuardStatus(guard: controller.duoGuard) }
                 row("Apple Pencil draws", $pencil, id: "pencil",
                     "Apple Pencil presses and drags in Linux apps, for drawing and handwriting, instead of scrolling like a finger. Ready for when Apple switches Pencil on for iPhone Duo.")
+                ThemedSeparator()
+                row("Keep jobs running in other apps", $continuedJobs, id: "continuedJobs",
+                    "A job started with notify-phone while LinPad is in front keeps running after you switch apps, with its progress in iOS's own banner (where you can also stop it). iOS decides how long; it may pause when the phone locks, so pair this with Settings › Background › While jobs run. Uses more battery. Needs iOS 26.")
             }
             .onChangeCompat(of: appLock) { _, _ in controller?.appLock.settingChanged() }
             .onChangeCompat(of: heatGuard) { _, _ in controller?.duoGuard.conditionsChanged() }
+            if let controller { RemotePCSettingsSection(remote: controller.remotePC) }
         }
     }
 

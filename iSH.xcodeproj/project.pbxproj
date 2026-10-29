@@ -27,6 +27,7 @@
 		DE5C0000000000000000D002 /* LinuxJobAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE5C0000000000000000D001 /* LinuxJobAttributes.swift */; };
 		DE5C0000000000000000D004 /* DuoLiveActivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE5C0000000000000000D003 /* DuoLiveActivities.swift */; };
 		DE5C0000000000000000D006 /* DuoAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE5C0000000000000000D005 /* DuoAppIntents.swift */; };
+		DE5C0000000000000000D008 /* DuoContinuedJobs.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE5C0000000000000000D007 /* DuoContinuedJobs.swift */; };
 		DE5C000000000000000000A2 /* ISHAudioBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE5C000000000000000000A1 /* ISHAudioBridge.swift */; };
 		DE5C0000000000000000AF02 /* ISHMicBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE5C0000000000000000AF01 /* ISHMicBridge.swift */; };
 		DE5C0000000000000000AF12 /* ISHBackgroundKeeper.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE5C0000000000000000AF11 /* ISHBackgroundKeeper.swift */; };
@@ -514,6 +515,7 @@
 		DE5C0000000000000000D001 /* LinuxJobAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinuxJobAttributes.swift; sourceTree = "<group>"; };
 		DE5C0000000000000000D003 /* DuoLiveActivities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuoLiveActivities.swift; sourceTree = "<group>"; };
 		DE5C0000000000000000D005 /* DuoAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuoAppIntents.swift; sourceTree = "<group>"; };
+		DE5C0000000000000000D007 /* DuoContinuedJobs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuoContinuedJobs.swift; sourceTree = "<group>"; };
 		DE5C000000000000000000A1 /* ISHAudioBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ISHAudioBridge.swift; sourceTree = "<group>"; };
 		DE5C0000000000000000AF01 /* ISHMicBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ISHMicBridge.swift; sourceTree = "<group>"; };
 		DE5C0000000000000000AF11 /* ISHBackgroundKeeper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ISHBackgroundKeeper.swift; sourceTree = "<group>"; };
@@ -1173,6 +1175,7 @@
 				DE5C0000000000000000D001 /* LinuxJobAttributes.swift */,
 				DE5C0000000000000000D003 /* DuoLiveActivities.swift */,
 				DE5C0000000000000000D005 /* DuoAppIntents.swift */,
+				DE5C0000000000000000D007 /* DuoContinuedJobs.swift */,
 			);
 			path = Desktop;
 			sourceTree = "<group>";
@@ -2471,6 +2474,7 @@
 				DE5C0000000000000000D002 /* LinuxJobAttributes.swift in Sources */,
 				DE5C0000000000000000D004 /* DuoLiveActivities.swift in Sources */,
 				DE5C0000000000000000D006 /* DuoAppIntents.swift in Sources */,
+				DE5C0000000000000000D008 /* DuoContinuedJobs.swift in Sources */,
 				AA000113AF96D90D00FFB7A4 /* AboutExternalKeyboardViewController.m in Sources */,
 				AA000114AF96D90D00FFB7A4 /* PassthroughView.m in Sources */,
 				AA000115AF96D90D00FFB7A4 /* UserPreferences.m in Sources */,

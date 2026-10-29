@@ -86,7 +86,7 @@ final class ISHBackgroundKeeper: NSObject, CLLocationManagerDelegate {
     /// Whether something keeps LinPad running in the background right now: Linux audio
     /// playing (unless the setting is Off) or location updates (Always).
     var keepsRunning: Bool {
-        if mode == .always && isUpdating { return true }
+        if mode.usesLocation && isUpdating { return true }
         return mode != .off && (ISHAudioBridge.shared.isOutputActive || ISHMicBridge.shared.isCapturing)
     }
 
@@ -119,6 +119,13 @@ final class ISHBackgroundKeeper: NSObject, CLLocationManagerDelegate {
         log.info("file system unparked")
     }
 
+    /// "While jobs run": the list of notify-phone jobs changed. The last job ending stops the
+    /// location keep-alive, and LinPad may then be suspended like after audio stops.
+    func jobsChanged() {
+        updateLocation()
+        if inBackground && !keepsRunning { audioStoppedInBackground() }
+    }
+
     /// Linux audio stopped (or was interrupted) while LinPad is in the background: nothing
     /// keeps it running any more, so iPadOS suspends it within seconds.
     func audioStoppedInBackground() {
@@ -139,7 +146,8 @@ final class ISHBackgroundKeeper: NSObject, CLLocationManagerDelegate {
     }
 
     private func updateLocation() {
-        let wanted = mode == .always && access == .allowed && mockAccess == nil
+        let jobsWantIt = mode == .whileJobsRun && !DuoJobCenter.shared.runningJobs.isEmpty
+        let wanted = (mode == .always || jobsWantIt) && access == .allowed && mockAccess == nil
         if wanted && !isUpdating {
             // Updates can only begin in the foreground; begun there they keep running.
             guard !inBackground else { return }

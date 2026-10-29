@@ -36,7 +36,7 @@ struct LifecycleSettingsSection: View {
                     .foregroundStyle(theme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("settings.background.explanation")
-                if mode == .always {
+                if mode.usesLocation {
                     locationStatus
                 }
                 ThemedSeparator()
