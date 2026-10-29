@@ -1,0 +1,74 @@
+name: LinPad Duo IPA
+
+# Builds LinPad Duo on GitHub's Apple-silicon Macs (free for public repositories), so no
+# Mac of your own has to run Xcode. The IPA is under the run's Artifacts; install it with
+# Sideloadly, AltStore, SideStore or iloader (DUO-SETUP.md, "Building in the cloud").
+on:
+  push:
+    branches: [duo]
+    paths-ignore: ['**.md']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: duo-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+  HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: "1"
+
+jobs:
+  ipa:
+    name: Build the IPA
+    runs-on: macos-26
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Use the newest Xcode on the runner
+        run: |
+          ls -d /Applications/Xcode*.app
+          newest=$(ls -d /Applications/Xcode*.app | sort -V | tail -n1)
+          sudo xcode-select -s "$newest/Contents/Developer"
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Build tools
+        run: |
+          brew install meson ninja llvm lld libarchive coreutils
+          echo "$(brew --prefix lld)/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+
+      - name: Cache the Linux system download
+        uses: actions/cache@v4
+        with:
+          path: build-duo/linpad-rootfs.tar.gz
+          key: linpad-rootfs-1.5.0
+
+      - name: Build the IPA
+        run: release/duo-build-ipa.sh 2>&1 | tee "$RUNNER_TEMP/build.log"
+
+      - name: Errors from the build
+        if: failure()
+        run: grep -E "error:|\*\* BUILD FAILED|fatal" "$RUNNER_TEMP/build.log" | head -150 || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LinPad-Duo-ipa
+          path: build-duo/LinPad-Duo.ipa
+          compression-level: 0
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: build-log
+          path: ${{ runner.temp }}/build.log
+          retention-days: 7
