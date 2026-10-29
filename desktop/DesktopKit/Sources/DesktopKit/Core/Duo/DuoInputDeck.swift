@@ -66,7 +66,7 @@ struct DuoLaptopLayout<Desktop: View>: View {
     var body: some View {
         WithPerceptionTracking {
             GeometryReader { proxy in
-                let fold = foldFrame(in: proxy.size)
+                let fold = foldFrame(in: proxy.size, origin: proxy.frame(in: .global).origin)
                 VStack(spacing: 0) {
                     desktop()
                         .frame(height: isActive ? fold.minY : proxy.size.height)
@@ -81,9 +81,11 @@ struct DuoLaptopLayout<Desktop: View>: View {
         }
     }
 
-    /// The fold from iOS, or the middle of the screen if iOS has not reported one.
-    private func foldFrame(in size: CGSize) -> CGRect {
-        if let fold = controller.pose.foldInWindow, fold.width > fold.height, fold.minY > 100 {
+    /// The fold from iOS (reported in window coordinates; this view starts at `origin`), or
+    /// the middle of the screen if iOS has not reported one.
+    private func foldFrame(in size: CGSize, origin: CGPoint) -> CGRect {
+        if let fold = controller.pose.foldInWindow?.offsetBy(dx: -origin.x, dy: -origin.y),
+           fold.width > fold.height, fold.minY > 100, fold.maxY < size.height - 100 {
             return fold
         }
         return CGRect(x: 0, y: (size.height / 2).rounded(), width: size.width, height: 0)
