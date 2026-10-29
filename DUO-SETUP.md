@@ -188,13 +188,28 @@ Good to know:
 
 ## 5. Fast mode (optional, makes Linux several times faster)
 
-Fast mode needs **StikDebug** and **LocalDevVPN** from the App Store, plus a "pairing file"
-made on the Mac. Follow `release/INSTALL-DEVICE.md` section 3b, reading "iPhone" for "iPad".
+Works on the iPhone Duo with iOS 27.2 (TXM): "Performance: Native JIT ✓", 2026-10-29.
+It needs **StikDebug**, **LocalDevVPN** (App Store) and a pairing file. How it was set up,
+all over Wi-Fi once the phone had been paired with the Mac over USB:
 
-Honest expectation: fast mode has never been tested on a phone with Apple's newer code
-protection (TXM), and the Duo has it. If StikDebug can't switch it on, LinPad starts in
-"Compatibility mode" after about 20 seconds. Everything still works, just slower.
-Settings › Fast Mode › Status says which mode is running.
+1. **StikDebug** isn't in the App Store. Download `StikDebug-<version>.ipa` from
+   github.com/StikDebug/StikDebug releases (3.1.15 worked), set its bundle ID to
+   `com.ryancalpin.stikdebug`, sign it with a development profile for that ID (get-task-allow,
+   so the Mac can copy files into it) and install it with `xcrun devicectl device install app`.
+2. **Pairing file.** On iOS 27 StikDebug wants a *RemotePairing* file (`public_key`,
+   `private_key`, `identifier`, `alt_irk`), not the classic lockdown pair record; the classic
+   one fails with `missing field public_key`. Make one with pymobiledevice3:
+   `pymobiledevice3 lockdown remotepairing --pair --udid <UDID>` (promptless, works over
+   Wi-Fi) writes `~/.pymobiledevice3/remote_<UDID>.plist`. Copy its `public_key` and
+   `private_key`, `peer_alt_irk` as `alt_irk`, and `identifier` =
+   `pymobiledevice3.pair_records.generate_host_id()` into a plist, then
+   `xcrun devicectl device copy to --domain-type appDataContainer --domain-identifier
+   com.ryancalpin.stikdebug --destination Documents/pairingFile.plist`.
+3. Connect LocalDevVPN, open StikDebug once, then open LinPad from the Home Screen.
+
+LocalDevVPN only has to be connected while LinPad starts; it only carries traffic inside the
+phone, so it can stay on. Without it LinPad starts in "Compatibility mode" after about 20
+seconds and offers "Retry fast mode". Settings › Fast Mode › Status says which mode is running.
 
 ## 5b. Adding the widget extension (for Live Activities and the Home Screen widget)
 
