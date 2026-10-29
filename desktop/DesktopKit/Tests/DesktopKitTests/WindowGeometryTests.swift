@@ -119,6 +119,15 @@ final class WindowGeometryTests: XCTestCase {
         XCTAssertEqual(WindowGeometry.clamped(third, in: air11), third)
     }
 
+    func testNarrowLandscapeOpensWindowsAtFullWidth() {
+        // The unfolded iPhone Duo: two halves would each be too small to use.
+        let duo = CGSize(width: 680, height: 466)
+        let size = WindowGeometry.initialSize(preferred: CGSize(width: 760, height: 480), in: duo)
+        XCTAssertEqual(size.width, duo.width - WindowGeometry.placementMargin * 2)
+        let frame = WindowGeometry.placement(for: size, avoiding: [], in: duo)
+        XCTAssertEqual(WindowGeometry.clamped(frame, in: duo), frame)
+    }
+
     func testPortraitUsesFullWidthPreference() {
         let portrait = CGSize(width: 820, height: 1146)
         let size = WindowGeometry.initialSize(preferred: CGSize(width: 760, height: 480), in: portrait)

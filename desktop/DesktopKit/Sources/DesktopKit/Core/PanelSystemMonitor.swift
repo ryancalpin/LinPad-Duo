@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import Perception
 
 /// Feeds the panel meters from /proc. Samples run back to back with a pause in between,
@@ -6,6 +7,7 @@ import Perception
 @Perceptible @MainActor
 final class PanelSystemMonitor {
     private static let interval: Duration = .seconds(3)
+    private static let logger = Logger(subsystem: "DesktopKit", category: "PanelSystemMonitor")
     static let memorySeparator = "\n__LINPAD_MEMINFO__\n"
     static let sampleCommand = "head -1 /proc/stat && printf '\\n__LINPAD_MEMINFO__\\n' && cat /proc/meminfo"
 
@@ -56,8 +58,15 @@ final class PanelSystemMonitor {
     private func sample(_ host: any LinuxHost) async {
         let result = await host.run(Self.sampleCommand)
         // A cancelled host command may still finish; it must not update a resumed sampler.
-        guard !Task.isCancelled, result.succeeded,
-              let separator = result.stdout.range(of: Self.memorySeparator) else { return }
+        guard !Task.isCancelled else { return }
+        guard result.succeeded, let separator = result.stdout.range(of: Self.memorySeparator) else {
+            Self.logger.notice("""
+                sample failed: exit \(result.exitCode, privacy: .public) \
+                stdout \(String(result.stdout.prefix(300)).debugDescription, privacy: .public) \
+                stderr \(String(result.stderr.prefix(300)).debugDescription, privacy: .public)
+                """)
+            return
+        }
         let stat = String(result.stdout[..<separator.lowerBound])
         let memory = String(result.stdout[separator.upperBound...])
         if let times = Self.parseCPUTimes(stat) {

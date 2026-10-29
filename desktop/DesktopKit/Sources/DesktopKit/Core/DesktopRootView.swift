@@ -42,6 +42,7 @@ public struct DesktopRootView: View {
 
     public var body: some View {
         WithPerceptionTracking { root }
+            .modifier(AppScenePhase())
     }
 
     private var root: some View {

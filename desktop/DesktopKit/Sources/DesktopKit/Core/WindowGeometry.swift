@@ -161,14 +161,19 @@ enum WindowGeometry {
     static let placementMargin: CGFloat = 16
     static let cascadeStep: CGFloat = 28
 
+    /// Narrowest half that still makes a usable window side by side with another.
+    static let sideBySideMinimumWidth: CGFloat = 520
+
     /// The size a new window opens at. In landscape the default never exceeds half the
-    /// desktop, so two fresh windows fit side by side on an 11" iPad.
+    /// desktop, so two fresh windows fit side by side on an 11" iPad. A desktop too narrow
+    /// for two usable halves (the unfolded iPhone Duo) opens windows at full width instead.
     static func initialSize(preferred: CGSize, in bounds: CGSize, limits: Limits = Limits()) -> CGSize {
         guard bounds.width > 0, bounds.height > 0 else { return preferred }
         let margin = placementMargin
         var maxWidth = bounds.width - margin * 2
-        if bounds.width > bounds.height {
-            maxWidth = min(maxWidth, ((bounds.width - margin * 3) / 2).rounded(.down))
+        let half = ((bounds.width - margin * 3) / 2).rounded(.down)
+        if bounds.width > bounds.height && half >= sideBySideMinimumWidth {
+            maxWidth = min(maxWidth, half)
         }
         let maxHeight = bounds.height - margin * 2 - limits.bottomGestureInset
         return CGSize(width: max(limits.minimumSize.width, min(preferred.width, maxWidth)),
