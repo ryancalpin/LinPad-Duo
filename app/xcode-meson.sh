@@ -41,7 +41,7 @@ EOF
     if [[ -n "$GUEST_ARCH" ]]; then
         guest_arch_opt="-Dguest_arch=$GUEST_ARCH"
     fi
-    (set -x; meson $SRCROOT --cross-file $crossfile $guest_arch_opt) || exit $?
+    (set -x; meson "$SRCROOT" --cross-file "$crossfile" $guest_arch_opt) || exit $?
     config=$(meson introspect --buildoptions)
 fi
 

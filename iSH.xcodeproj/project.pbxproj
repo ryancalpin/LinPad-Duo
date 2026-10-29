@@ -2116,7 +2116,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "python3 $SRCROOT/app/gen_apk_repositories.py\n";
+			shellScript = "python3 \"$SRCROOT/app/gen_apk_repositories.py\"\n";
 		};
 		AA000013AF96D90D00FFB7A4 /* Compile JavaScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -2135,7 +2135,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd $SRCROOT/deps/libapps && ./hterm/bin/mkdist\n";
+			shellScript = "cd \"$SRCROOT/deps/libapps\" && ./hterm/bin/mkdist\n";
 		};
 		AA000300AF96D90D00FFB7A4 /* Build Meson (ARM64) */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -2172,7 +2172,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = "/bin/sh -e";
-			shellScript = "python3 $SRCROOT/app/gen_apk_repositories.py\n";
+			shellScript = "python3 \"$SRCROOT/app/gen_apk_repositories.py\"\n";
 		};
 		BB13F813200AEFAC003D1C4D /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -2220,7 +2220,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = "/bin/sh -e";
-			shellScript = "cd $SRCROOT/deps/libapps\n./hterm/bin/mkdist\n";
+			shellScript = "cd \"$SRCROOT/deps/libapps\"\n./hterm/bin/mkdist\n";
 			showEnvVarsInLog = 0;
 		};
 		BB4A922A24ED9421002F5A96 /* Add icons to Info.plist */ = {
@@ -2294,7 +2294,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = "/bin/sh -e";
-			shellScript = "python3 $SRCROOT/app/gen_apk_repositories.py\n";
+			shellScript = "python3 \"$SRCROOT/app/gen_apk_repositories.py\"\n";
 		};
 		BBEF197B268066D1001225BD /* Compile JavaScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -2310,7 +2310,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = "/bin/sh -e";
-			shellScript = "cd $SRCROOT/deps/libapps\n./hterm/bin/mkdist\n";
+			shellScript = "cd \"$SRCROOT/deps/libapps\"\n./hterm/bin/mkdist\n";
 			showEnvVarsInLog = 0;
 		};
 		BBF1248B1FA7BF530088FB50 /* Download Root */ = {

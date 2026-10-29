@@ -69,8 +69,8 @@ prefix=$P
 Name: vulkan
 Description: MoltenVK $MVK_VERSION (static) as the Vulkan implementation
 Version: 1.4.335
-Libs: -L\${prefix}/lib -lMoltenVK -lc++ $frameworks
-Cflags: -I\${prefix}/include
+Libs: -L"\${prefix}/lib" -lMoltenVK -lc++ $frameworks
+Cflags: -I"\${prefix}/include"
 EOF
     mkdir -p "$GPU/cross"
     local cross=$GPU/cross/$t.txt
