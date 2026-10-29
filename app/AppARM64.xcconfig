@@ -6,7 +6,7 @@
 PRODUCT_NAME = iSH ARM64
 // Branding only: the bundle id, app group and the "iSH ARM64.app" file name stay, so an
 // update installs over the existing app and keeps its Linux system.
-APP_DISPLAY_NAME = Linux for iPad
+APP_DISPLAY_NAME = LinPad Duo
 PRODUCT_BUNDLE_IDENTIFIER = $(ROOT_BUNDLE_IDENTIFIER).arm64
 PRODUCT_APP_GROUP_IDENTIFIER = group.$(ROOT_BUNDLE_IDENTIFIER).arm64
 

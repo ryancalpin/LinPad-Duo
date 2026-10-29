@@ -33,7 +33,8 @@
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=$(cd "$HERE/.." && pwd)
-SCRATCH=/Volumes/ExternalHD/Dev/ipad-jit/release-work
+# Large temporary files. The original author kept them on an external disk; anywhere works.
+SCRATCH=${SCRATCH:-$ROOT/build-rootfs-work}
 WORK=${WORK:-$SCRATCH/stages}
 VSCODE=${VSCODE:-0}
 DEMO=${DEMO:-1}

@@ -1,8 +1,12 @@
 import Foundation
 
-/// Where LinPad's releases and its SideStore/AltStore source live.
+/// Where LinPad Duo's releases and its SideStore/AltStore source live. This fork checks
+/// its own repository, never the original fspecii/LinPad, so an update can never put stock
+/// LinPad over the Duo changes (DUO-UPDATING.md explains taking the original's fixes).
 public enum LinPadProject {
-    public static let repository = "fspecii/LinPad"
+    public static let repository = "ryancalpin/LinPad-Duo"
+    /// The project this fork follows.
+    public static let upstreamRepository = "fspecii/LinPad"
     public static let releasesPage = URL(string: "https://github.com/\(repository)/releases")!
     public static let latestReleaseAPI = URL(string: "https://api.github.com/repos/\(repository)/releases/latest")!
     public static let releasesAPI = URL(string: "https://api.github.com/repos/\(repository)/releases?per_page=10")!

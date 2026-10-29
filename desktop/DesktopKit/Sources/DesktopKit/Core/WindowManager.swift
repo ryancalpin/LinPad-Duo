@@ -539,12 +539,19 @@ final class WindowManager {
 
     func updateDesktopSize(_ size: CGSize) {
         guard size != desktopSize, size.width > 0, size.height > 0 else { return }
+        // Folding to the outer screen (or into laptop pose) and back returns to a size seen
+        // before: every window goes back to the frame it had there, not a squeezed copy.
+        if desktopSize.width > 0 { frameMemory.remember(windows, at: desktopSize) }
+        let remembered = frameMemory.frames(at: size)
         desktopSize = size
         for window in windows {
-            window.frame = WindowGeometry.keptOnScreen(clamped(window.frame), in: size)
+            let frame = remembered[window.id] ?? window.frame
+            window.frame = WindowGeometry.keptOnScreen(clamped(frame), in: size)
         }
         retileAll()
     }
+
+    @PerceptionIgnored private var frameMemory = DesktopSizeFrameMemory()
 
     /// The keyboard's end frame in desktop coordinates (nil when it went away).
     func updateKeyboard(_ frame: CGRect?, hardwareKeyboard: Bool) {
@@ -858,6 +865,39 @@ final class WindowManager {
 
     private func layoutDidChange() {
         onLayoutChange?()
+    }
+}
+
+/// The floating frames windows had at the last few desktop sizes (inner screen, outer
+/// screen, the top half in laptop pose). Sizes are rounded to whole points; a continuous
+/// resize only ever keeps the most recent `capacity` of them.
+struct DesktopSizeFrameMemory {
+    static let capacity = 6
+
+    private struct Key: Hashable {
+        let width: Int
+        let height: Int
+
+        init(_ size: CGSize) {
+            width = Int(size.width.rounded())
+            height = Int(size.height.rounded())
+        }
+    }
+
+    private var entries: [Key: [UUID: CGRect]] = [:]
+    private var order: [Key] = []
+
+    @MainActor
+    mutating func remember(_ windows: [DesktopWindow], at size: CGSize) {
+        let key = Key(size)
+        entries[key] = Dictionary(windows.map { ($0.id, $0.frame) }, uniquingKeysWith: { first, _ in first })
+        order.removeAll { $0 == key }
+        order.append(key)
+        while order.count > Self.capacity { entries[order.removeFirst()] = nil }
+    }
+
+    func frames(at size: CGSize) -> [UUID: CGRect] {
+        entries[Key(size)] ?? [:]
     }
 }
 

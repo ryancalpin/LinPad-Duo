@@ -17,7 +17,7 @@ enum LinuxDeviceInfo {
     static func publish(to defaults: UserDefaults = .standard) {
         let identifier = modelIdentifier
         let model = models[identifier]
-        defaults.set(model?.name ?? "iPad (\(identifier))", forKey: hostModelKey)
+        defaults.set(model?.name ?? (identifier.hasPrefix("iPhone") ? "iPhone" : "iPad") + " (\(identifier))", forKey: hostModelKey)
         if let chip = model?.chip {
             defaults.set(chip, forKey: chipNameKey)
         }

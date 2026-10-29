@@ -7,7 +7,7 @@
 # (ISH=..., default build-gpu-off/ish; any build works, the device is not used).
 # See gpu/DESIGN.md, "Guest userspace".
 set -euo pipefail
-ROOT=/Volumes/ExternalHD/Dev/ish-arm64
+ROOT=${ROOT:-$(cd "$(dirname "$0")/.." && pwd)}
 IN=$(cd "$(dirname "$1")" && pwd)/$(basename "$1")
 OUT=$(cd "$(dirname "$2")" && pwd)/$(basename "$2")
 ISH=${ISH:-$ROOT/build-gpu-off/ish}

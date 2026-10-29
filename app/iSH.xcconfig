@@ -1,5 +1,7 @@
-// Change this to change all the bundle IDs and app groups
-ROOT_BUNDLE_IDENTIFIER = com.valentinneagu.ish
+// Change this to change all the bundle IDs and app groups.
+// LinPad Duo has its own, so it installs next to stock LinPad and can be signed with your
+// own Apple account (com.valentinneagu.ish belongs to the original author's team).
+ROOT_BUNDLE_IDENTIFIER = com.ryancalpin.linpadduo
 // It's easiest to specify your development team ID in the project build settings, but you can alternatively put it here to reduce merge conflicts
 DEVELOPMENT_TEAM =
 

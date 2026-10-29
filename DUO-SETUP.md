@@ -1,0 +1,105 @@
+# LinPad Duo: building it and putting it on the phone
+
+Plain-English steps for Ryan's Mac. Every command goes in the Terminal app, run from the
+`LinPad-Duo` folder (the clone of this repo). Lines starting with `#` are notes, not commands.
+
+## 0. Once: what you need
+
+- A Mac with **Xcode 27.1 or newer** (from the App Store). Open it once and let it install its extras.
+- The **Homebrew** tools LinPad's build uses:
+
+  ```sh
+  brew install meson ninja llvm lld libimobiledevice ideviceinstaller
+  ```
+
+- **Your Apple account in Xcode**: Xcode › Settings › Accounts › add your Apple ID.
+  - A **free** account works, but the app stops opening after 7 days, and you then have to build
+    and install it again. It also can't use the "more memory" option (below).
+  - A **paid** Apple Developer account ($99 a year) lasts a year and allows the extra memory.
+- Your **Team ID**: Xcode › Settings › Accounts › your account › the team's ID (10 letters and
+  numbers). The commands below call it `YOUR_TEAM_ID`.
+- On the phone: **Developer Mode** on (Settings › Privacy & Security › Developer Mode), then restart.
+
+## 1. Get the code
+
+```sh
+git clone https://github.com/ryancalpin/LinPad-Duo.git
+cd LinPad-Duo
+git checkout duo
+git submodule update --init --recursive
+```
+
+## 2. Get the Linux system (no 50-minute build needed)
+
+The original LinPad project publishes its Linux system. Download it and its version stamp:
+
+```sh
+mkdir -p release/out
+curl -L -o release/out/linpad-rootfs.tar.gz \
+  https://github.com/fspecii/LinPad/releases/download/v1.5.0/linpad-rootfs-1.5.0.tar.gz
+echo 202610031701 > release/out/linpad-rootfs.version
+```
+
+That's about 620 MB. (Building it yourself is `release/build-rootfs.sh`; it needs the `ish`
+command-line tool built first and takes about an hour, so only do it if you change the Linux side.)
+
+## 3. Build the app
+
+```sh
+export PATH=/opt/homebrew/opt/lld/bin:/opt/homebrew/opt/llvm/bin:$PATH
+xcodebuild -skipMacroValidation -project iSH.xcodeproj -scheme iSH-ARM64 \
+  -configuration Release -destination generic/platform=iOS -allowProvisioningUpdates \
+  SYMROOT=$PWD/build-ios-release DEVELOPMENT_TEAM=YOUR_TEAM_ID ISH_JIT_BUILD=enabled build
+release/embed-rootfs.sh --device "build-ios-release/Release-iphoneos/iSH ARM64.app" \
+  release/out/linpad-rootfs.tar.gz
+```
+
+- The first build takes a while (it builds the Linux engine too).
+- **If it fails**, copy the last 30 lines of the output to Claude Code and ask it to fix the build.
+  This code was written without a Mac, so the first build is expected to need a few fixes.
+- **The Duo hinge code** is the part most likely to fail if Apple renames anything. It lives in
+  `desktop/DesktopKit/Sources/DesktopKit/Core/Duo/DuoHinge.swift`. To build without it while
+  that gets fixed, delete the line `.define("LINPAD_HINGE_API")` in
+  `desktop/DesktopKit/Package.swift`. The app then guesses the pose from the screen size alone
+  (closed and open work; book, laptop and tent don't).
+- **Paid account only, for more memory:** in `app/App.xcconfig`, change
+  `app/iSH.entitlements` to `app/iSH-MoreMemory.entitlements`, then build again.
+
+## 4. Install on the phone
+
+Plug the phone into the Mac, unlock it and tap **Trust**. Then:
+
+```sh
+idevice_id -l          # prints the phone's ID; copy it
+ideviceinstaller -u PHONE_ID install "build-ios-release/Release-iphoneos/iSH ARM64.app"
+```
+
+- If the phone says "Untrusted Developer": Settings › General › VPN & Device Management › your
+  account › Trust.
+- The app is called **LinPad Duo** and has its own bundle ID (`com.ryancalpin.linpadduo.arm64`),
+  so it sits next to stock LinPad if you have that too.
+- The first launch unpacks Linux, which takes a few minutes. Leave the app open.
+
+## 5. Fast mode (optional, makes Linux several times faster)
+
+Fast mode needs **StikDebug** and **LocalDevVPN** from the App Store, plus a "pairing file"
+made on the Mac. Follow `release/INSTALL-DEVICE.md` section 3b, reading "iPhone" for "iPad".
+
+Honest expectation: fast mode has never been tested on a phone with Apple's newer code
+protection (TXM), and the Duo has it. If StikDebug can't switch it on, LinPad starts in
+"Compatibility mode" after about 20 seconds. Everything still works, just slower.
+Settings › Fast Mode › Status says which mode is running.
+
+## 6. What to test, phase by phase
+
+Tick these off on the phone. If something's wrong, tell Claude Code what you did and what you saw.
+
+### Phase 1: runs on the Duo
+- [ ] LinPad Duo installs and opens.
+- [ ] Unfolded, the desktop fills the inner screen with no black bars.
+- [ ] Firefox and the terminal open; tapping and typing work.
+- [ ] Close the phone: nothing crashes; the desktop shows on the outer screen.
+- [ ] Open it again: windows are back where they were.
+- [ ] Settings › Fast Mode › Status: note whether it says fast mode or Compatibility mode.
+- [ ] Background check: Settings › Background › "Always". Start `sleep 600; echo done` in a
+      terminal, switch to another app for 10 minutes, come back. Did it print `done`?
