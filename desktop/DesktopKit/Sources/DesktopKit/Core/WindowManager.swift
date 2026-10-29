@@ -80,6 +80,17 @@ struct WindowPlacement: Codable, Equatable {
     var isFloating: Bool? = nil
 }
 
+/// Where windows go while the iPhone Duo is in a pose that needs its own layout
+/// (Core/Duo). It only decides where windows are drawn: their own frames, snaps and tiles
+/// stay as they were, so leaving the pose puts everything back exactly.
+enum PoseLayout: Equatable, Sendable {
+    /// The outer screen: every window fills the desktop; the focused one is on top.
+    case single
+    /// Book pose: the two halves of the inner screen, either side of the fold, in desktop
+    /// coordinates. Each window belongs to one side and fills it.
+    case sides(leading: CGRect, trailing: CGRect)
+}
+
 /// A workspace's auto-tiling settings, persisted per workspace.
 struct TilingState: Codable, Equatable, Sendable {
     var isEnabled = false
@@ -145,6 +156,10 @@ final class WindowManager {
         didSet { if outerGapOverride != oldValue { retileAll() } }
     }
     var outerGap: CGFloat { isZen ? 0 : (outerGapOverride ?? tilingGap * 2) }
+    /// The Duo's outer-screen or book-pose layout, nil otherwise.
+    private(set) var poseLayout: PoseLayout?
+    /// Book pose: the windows on the trailing (right) side; every other window is on the leading one.
+    private(set) var trailingSideWindows: Set<UUID> = []
     /// Taskbar buttons in global coordinates, where minimized windows shrink to.
     var taskbarTargets: [UUID: CGRect] = [:]
     /// The desktop area's origin in global coordinates.
@@ -234,6 +249,15 @@ final class WindowManager {
     }
 
     private func tiledOrFloatingFrame(for window: DesktopWindow) -> CGRect {
+        switch poseLayout {
+        case .single:
+            return CGRect(origin: .zero, size: desktopSize)
+        case .sides(let leading, let trailing):
+            let side = trailingSideWindows.contains(window.id) ? trailing : leading
+            return side.offsetBy(dx: window.tileDragOffset.width, dy: window.tileDragOffset.height)
+        case nil:
+            break
+        }
         if window.isMaximized { return CGRect(origin: .zero, size: desktopSize) }
         if let tile = tileFrames[window.id] {
             return tile.offsetBy(dx: window.tileDragOffset.width, dy: window.tileDragOffset.height)
@@ -277,6 +301,12 @@ final class WindowManager {
     func present(_ window: DesktopWindow) {
         // Last chance to picture the current window while it is still on top.
         if let focused = focusedWindow { willChangeFocus?(focused) }
+        // Book pose: a new window opens on the side the focused window is not on, so a
+        // second app lands next to the first.
+        if case .sides = poseLayout, let focused = focusedWindow, focused.workspace == window.workspace,
+           !trailingSideWindows.contains(focused.id) {
+            trailingSideWindows.insert(window.id)
+        }
         withAnimation(DesktopMotion.standard) {
             windows.append(window)
             tileOrder.append(window.id)
@@ -299,6 +329,7 @@ final class WindowManager {
             taskbarTargets[id] = nil
             if snapPreview?.windowID == id { snapPreview = nil }
             if focusedWindowID == id { focusNextWindow(after: id) }
+            trailingSideWindows.remove(id)
         }
         layoutDidChange()
     }
@@ -581,6 +612,7 @@ final class WindowManager {
         guard let window = window(withID: id) else { return nil }
         focus(id)
         window.isInteracting = true
+        if poseLayout != nil { return displayFrame(for: window) }
         if let tile = tileFrames[id], !window.isMaximized {
             return tile
         }
@@ -601,6 +633,15 @@ final class WindowManager {
 
     func updateMove(_ id: UUID, from origin: CGRect, translation: CGSize, pointer: CGPoint) {
         guard let window = window(withID: id) else { return }
+        if let poseLayout {
+            guard case .sides = poseLayout else { return }
+            window.tileDragOffset = translation
+            let preview = poseSide(at: pointer).map { SnapPreview(windowID: id, frame: $0.frame) }
+            if preview != snapPreview {
+                withAnimation(DesktopMotion.quick) { snapPreview = preview }
+            }
+            return
+        }
         if isTiledByLayout(window) && !window.isMaximized {
             window.tileDragOffset = translation
             let preview = tiledWindow(at: pointer, excluding: id).flatMap { target in
@@ -624,6 +665,16 @@ final class WindowManager {
         withAnimation(DesktopMotion.quick) { snapPreview = nil }
         guard let window = window(withID: id) else { return }
         window.isInteracting = false
+        if poseLayout != nil {
+            withAnimation(DesktopMotion.tile) {
+                if let side = poseSide(at: pointer) {
+                    if side.isTrailing { trailingSideWindows.insert(id) } else { trailingSideWindows.remove(id) }
+                }
+                window.tileDragOffset = .zero
+            }
+            layoutDidChange()
+            return
+        }
         if isTiledByLayout(window) && !window.isMaximized {
             withAnimation(DesktopMotion.tile) {
                 if let target = tiledWindow(at: pointer, excluding: id) {
@@ -656,7 +707,7 @@ final class WindowManager {
 
     /// A tiled window becomes free-floating at its current size before resizing.
     func beginResize(_ id: UUID) -> CGRect? {
-        guard let window = window(withID: id), !window.isMaximized else { return nil }
+        guard poseLayout == nil, let window = window(withID: id), !window.isMaximized else { return nil }
         focus(id)
         window.isInteracting = true
         if let tile = tileFrames[id] { return tile }
@@ -681,6 +732,73 @@ final class WindowManager {
         window(withID: id)?.isInteracting = false
         onTilingChange?(tiling)
         layoutDidChange()
+    }
+
+    // MARK: - Pose layouts (iPhone Duo)
+
+    /// Switches the outer-screen or book-pose layout on (or off with nil).
+    func setPoseLayout(_ layout: PoseLayout?) {
+        guard layout != poseLayout else { return }
+        var wasSides = false
+        if case .sides = poseLayout { wasSides = true }
+        var isSides = false
+        if case .sides = layout { isSides = true }
+        let enteringSides = isSides && !wasSides
+        withAnimation(DesktopMotion.tile) {
+            poseLayout = layout
+            if enteringSides { assignSidesForBookPose() }
+            for window in windows { window.tileDragOffset = .zero }
+        }
+    }
+
+    /// The first time the phone folds like a book: the focused window on the left, the one
+    /// used before it on the right, the rest behind them.
+    private func assignSidesForBookPose() {
+        let recent = recentWindowsInCurrentWorkspace().filter { !$0.isMinimized }
+        guard recent.count >= 2 else { return }
+        let assigned = windows(inWorkspace: currentWorkspace).contains { trailingSideWindows.contains($0.id) }
+        guard !assigned else { return }
+        trailingSideWindows.insert(recent[1].id)
+        raise(recent[1])
+        raise(recent[0])
+    }
+
+    /// Book pose: the windows on the left go right and the other way round.
+    func swapPoseSides() {
+        guard case .sides = poseLayout else { return }
+        withAnimation(DesktopMotion.tile) {
+            for window in windows(inWorkspace: currentWorkspace) {
+                if trailingSideWindows.contains(window.id) {
+                    trailingSideWindows.remove(window.id)
+                } else {
+                    trailingSideWindows.insert(window.id)
+                }
+            }
+        }
+        layoutDidChange()
+    }
+
+    /// Book pose: moves the window to one side.
+    func moveToPoseSide(_ id: UUID, trailing: Bool) {
+        withAnimation(DesktopMotion.tile) {
+            if trailing { trailingSideWindows.insert(id) } else { trailingSideWindows.remove(id) }
+        }
+        focus(id)
+    }
+
+    func isOnTrailingSide(_ id: UUID) -> Bool {
+        trailingSideWindows.contains(id)
+    }
+
+    private func poseSide(at point: CGPoint) -> (frame: CGRect, isTrailing: Bool)? {
+        guard case .sides(let leading, let trailing) = poseLayout else { return nil }
+        let middle = (leading.maxX + trailing.minX) / 2
+        return point.x >= middle ? (trailing, true) : (leading, false)
+    }
+
+    /// The windows to list on the outer screen: this workspace's, most recently used first.
+    func outerScreenWindowList() -> [DesktopWindow] {
+        recentWindowsInCurrentWorkspace()
     }
 
     // MARK: - Tiling

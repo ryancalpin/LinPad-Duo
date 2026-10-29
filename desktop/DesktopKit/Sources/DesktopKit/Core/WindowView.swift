@@ -98,7 +98,8 @@ struct WindowView: View {
     var body: some View {
         WithPerceptionTracking {
             let frame = manager.displayFrame(for: window)
-            let isMaximized = window.isMaximized && !isInOverview
+            // On the Duo's outer screen every window fills the desktop, as if maximized.
+            let isMaximized = (window.isMaximized || manager.poseLayout == .single) && !isInOverview
             let radius = isMaximized ? 0 : theme.cornerRadius
             let squareBottom = style.spec.skin?.squaresBottomCorners == true
             // The clip stays a plain rounded rectangle (a square-bottomed clip hid centred titles on
@@ -142,7 +143,7 @@ struct WindowView: View {
             .background {
                 WindowShadow(cornerRadius: radius, isFocused: isFocused, isHidden: isMaximized || !theme.showsWindowShadows)
             }
-            .overlay { if !window.isMaximized && !isInOverview { resizeHandles } }
+            .overlay { if !window.isMaximized && manager.poseLayout == nil && !isInOverview { resizeHandles } }
             .overlay { if isInOverview { overviewInteraction } }
             .frame(width: frame.width, height: frame.height)
             .scaleEffect(placement.scale, anchor: .topLeading)

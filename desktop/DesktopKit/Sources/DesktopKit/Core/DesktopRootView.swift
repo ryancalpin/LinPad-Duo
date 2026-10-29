@@ -24,6 +24,8 @@ public struct DesktopRootView: View {
     @AppStorage(DesktopShortcutModifier.storageKey) private var shortcutModifier = DesktopShortcutModifier.controlOption
     @AppStorage(DuoSettings.poseOverlayKey) private var showsPoseOverlay = false
     @AppStorage(DuoSettings.laptopDeckKey) private var laptopDeckEnabled = true
+    @AppStorage(DuoSettings.outerScreenModeKey) private var outerScreenModeEnabled = true
+    @AppStorage(DuoSettings.bookSplitKey) private var bookSplitEnabled = true
     @Environment(\.colorScheme) private var systemColorScheme
 
     public init(host: any LinuxHost, apps: [DesktopAppDescriptor]) {
@@ -96,6 +98,10 @@ public struct DesktopRootView: View {
             }
         }
         .duoPoseTracking(controller.pose)
+        .onChangeCompat(of: controller.pose.foldInWindow) { _, _ in controller.updatePoseLayout() }
+        .onChangeCompat(of: controller.windowManager.desktopSize) { _, _ in controller.updatePoseLayout() }
+        .onChangeCompat(of: outerScreenModeEnabled) { _, _ in controller.updatePoseLayout() }
+        .onChangeCompat(of: bookSplitEnabled) { _, _ in controller.updatePoseLayout() }
         .onChangeCompat(of: styleID, initial: true) { _, id in
             let style = DesktopStyle.stored(id)
             controller.applyStyle(style, dark: (DesktopAppearance(rawValue: appearanceID) ?? .styleDefault)
@@ -355,6 +361,7 @@ public struct DesktopRootView: View {
                     if let linux = controller.linux {
                         LinuxPopupLayerHost(bridge: linux)
                     }
+                    DuoPoseChrome(controller: controller)
                     DuoPointerOverlay(pointer: controller.duoPointer)
                 }
                 .coordinateSpace(name: DesktopCoordinateSpace.name)

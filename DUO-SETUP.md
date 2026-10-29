@@ -138,3 +138,18 @@ Tick these off on the phone. If something's wrong, tell Claude Code what you did
   built-in apps a click only brings that window forward (iOS doesn't let an app fake a
   touch), so touch those on the top half directly. The built-in Terminal app may still
   bring up the iPhone's own keyboard; foot (the Linux terminal) doesn't.
+
+### Phase 5: closing to the outer screen
+- [ ] With two or three windows open, start `sleep 30; echo finished` in foot, then close the phone.
+- [ ] On the outer screen the focused window fills it. The button in the bottom corner lists
+      the windows; tap one to switch. "New Terminal" and "Apps" are there too.
+- [ ] After 30 seconds the terminal shows `finished`: Linux kept running.
+- [ ] Open the phone: every window is back where it was, same size.
+
+### Phase 6: book pose
+- [ ] Open VS Code and Firefox, then half-open the phone like a book. One app fills each half.
+- [ ] Drag a window by its title bar to the other half: it snaps to that side. Nothing sits
+      across the fold.
+- [ ] The round ⇄ button at the bottom of the fold swaps the two sides.
+- [ ] Open a third app: it opens on the side the focused window isn't on.
+- [ ] Open the phone flat: back to the normal tiling desktop.

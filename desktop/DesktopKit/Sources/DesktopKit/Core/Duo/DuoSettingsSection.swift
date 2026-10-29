@@ -40,6 +40,10 @@ struct DuoSettingsSection: View {
                     "Linux apps get bigger or smaller to suit the outer screen, the inner screen, each half of the fold and a monitor. Adjust each one under Screen Sizes below.")
                 row("Laptop pose keyboard and trackpad", $laptopDeck, id: "laptopDeck",
                     "Half-open in landscape, the bottom half becomes a keyboard and trackpad for the desktop on the top half. With a keyboard attached only the trackpad shows; with a keyboard and mouse, neither.")
+                row("Outer screen: one window at a time", $outerScreenMode, id: "outerScreen",
+                    "When the phone closes, each window fills the small screen; the button in the corner lists them to switch. Linux keeps running, and opening the phone puts every window back.")
+                row("Book pose: two sides", $bookSplit, id: "bookSplit",
+                    "Half-open like a book, each half of the screen holds its own windows and nothing sits across the fold. Drag a window by its title bar to either side; the button on the fold swaps them.")
             }
             DuoScaleSettings()
                 .onChangeCompat(of: autoScale) { _, _ in DuoScaling.shared.refresh() }
