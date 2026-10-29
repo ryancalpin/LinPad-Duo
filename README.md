@@ -47,6 +47,16 @@
 
 ---
 
+> **LinPad Duo** is a fork of [LinPad](https://github.com/fspecii/LinPad) by fspecii, adapted for
+> the iPhone Duo and its fold poses: sizes per screen, a laptop-pose keyboard and trackpad, one
+> window at a time on the outer screen, two sides in book pose, a tent-pose status board, USB-C
+> drives and monitors, Live Activities, Shortcuts and on-device AI. LinPad is built on
+> [iSH](https://github.com/ish-app/ish). Both are GPLv3, and so is this fork (LICENSE.md,
+> LICENSE.IOS). Building it: [DUO-SETUP.md](DUO-SETUP.md). The plan: [LINPAD-DUO-PLAN.md](LINPAD-DUO-PLAN.md).
+> Taking LinPad's fixes: [DUO-UPDATING.md](DUO-UPDATING.md).
+
+---
+
 ## 📸 Screenshots
 
 <p align="center">

@@ -87,18 +87,23 @@ LinPad runs a real Alpine Linux desktop inside one sideloaded iPad app, with no 
 
 ## Progress
 
-- [ ] Phase 1: Run on the Duo
-- [ ] Phase 2: Pose detection
-- [ ] Phase 3: Automatic scaling per screen
-- [ ] Phase 4: Laptop pose keyboard and trackpad
-- [ ] Phase 5: Closing to the outer screen
-- [ ] Phase 6: Book pose with two workspaces
-- [ ] Phase 7: Tent status board
-- [ ] Phase 8: USB devices
-- [ ] Phase 9: External monitor
-- [ ] Phase 10: iPhone features
-- [ ] Phase 11: Safety and polish
-- [ ] Phase 12: Staying alive in the background
+All twelve phases were written in one go on 29 October 2026, without a Mac to build on. Each
+is its own commit on `duo`. Next: build on the Mac and test each phase on the phone with
+DUO-SETUP.md section 6, fixing build errors first.
+
+
+- [x] Phase 1: Run on the Duo (code written; not yet built or tested on the phone)
+- [x] Phase 2: Pose detection (code written; not yet built or tested on the phone)
+- [x] Phase 3: Automatic scaling per screen (code written; not yet built or tested on the phone)
+- [x] Phase 4: Laptop pose keyboard and trackpad (code written; not yet built or tested on the phone)
+- [x] Phase 5: Closing to the outer screen (code written; not yet built or tested on the phone)
+- [x] Phase 6: Book pose with two workspaces (code written; not yet built or tested on the phone)
+- [x] Phase 7: Tent status board (code written; not yet built or tested on the phone)
+- [x] Phase 8: USB devices (code written; not yet built or tested on the phone)
+- [x] Phase 9: External monitor (code written; not yet built or tested on the phone)
+- [x] Phase 10: iPhone features (code written; not yet built or tested on the phone)
+- [x] Phase 11: Safety and polish (code written; not yet built or tested on the phone)
+- [x] Phase 12: Staying alive in the background (code written; not yet built or tested on the phone)
 
 ## Phase 1: Run on the Duo
 
