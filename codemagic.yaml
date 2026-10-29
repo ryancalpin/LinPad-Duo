@@ -1,0 +1,29 @@
+# Codemagic builds LinPad Duo on Apple-silicon Macs in the cloud, so no Mac of your own
+# has to run Xcode. Codemagic › your app › Start new build › choose the "duo" branch and
+# the "LinPad Duo IPA" workflow. The IPA appears under the build's Artifacts; install it on
+# the phone with SideStore, AltStore, Sideloadly or iloader (DUO-SETUP.md, "Building in the
+# cloud").
+workflows:
+  linpad-duo-ipa:
+    name: LinPad Duo IPA
+    instance_type: mac_mini_m2
+    max_build_duration: 90
+    environment:
+      # The newest Xcode Codemagic has. With an iOS SDK older than 27.1 the build leaves out
+      # the hinge APIs by itself (release/duo-build-ipa.sh); switch to 27.1 once it's listed.
+      xcode: latest
+      vars:
+        HOMEBREW_NO_AUTO_UPDATE: "1"
+        HOMEBREW_NO_INSTALL_CLEANUP: "1"
+    triggering:
+      events: []
+    scripts:
+      - name: Submodules
+        script: git submodule update --init --recursive
+      - name: Build tools
+        script: |
+          brew install meson ninja llvm lld libarchive coreutils
+      - name: Build the IPA
+        script: release/duo-build-ipa.sh
+    artifacts:
+      - build-duo/LinPad-Duo.ipa

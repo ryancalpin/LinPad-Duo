@@ -80,6 +80,33 @@ ideviceinstaller -u PHONE_ID install "build-ios-release/Release-iphoneos/iSH ARM
   so it sits next to stock LinPad if you have that too.
 - The first launch unpacks Linux, which takes a few minutes. Leave the app open.
 
+## 4b. Building in the cloud instead (for an Intel Mac): Codemagic
+
+Xcode 27 doesn't run on Intel Macs, so Codemagic builds the app on its Macs and you install
+the result from yours. Its free plan has 500 build minutes a month; one build takes roughly
+30–45 minutes.
+
+1. Go to codemagic.io, sign up with your GitHub account, and add the app
+   **ryancalpin/LinPad-Duo** (allow Codemagic to see that repository when GitHub asks).
+2. When it asks how to configure the build, choose **codemagic.yaml** (it's in the repo).
+3. **Start new build** › branch **duo** › workflow **LinPad Duo IPA**.
+4. When it finishes, download **LinPad-Duo.ipa** from the build's **Artifacts**. It's about
+   700 MB, because the Linux system is inside.
+5. Install it from your Intel Mac with **Sideloadly** (free, works on Intel): plug the phone in,
+   drag the IPA onto Sideloadly, type your Apple ID, Start. It signs the app with your Apple ID.
+   AltStore (AltServer on the Mac) or SideStore work too.
+6. On the phone: Developer Mode on, and trust your Apple ID in Settings › General › VPN &
+   Device Management.
+
+What's different about a cloud build:
+- With a free Apple ID the app stops opening after 7 days; Sideloadly or SideStore can
+  refresh it. The widget extension (5b) isn't in it, so no Dynamic Island jobs or widget.
+- Codemagic has Xcode 27.0 right now, not 27.1. The build notices and leaves out the hinge
+  code, so **closed and open work, but book, laptop and tent poses don't** until Codemagic
+  adds Xcode 27.1. Then change `xcode: latest` in `codemagic.yaml` to `27.1` if needed and
+  build again.
+- If the build fails, copy the red error lines from Codemagic's log to Claude Code.
+
 ## 5. Fast mode (optional, makes Linux several times faster)
 
 Fast mode needs **StikDebug** and **LocalDevVPN** from the App Store, plus a "pairing file"

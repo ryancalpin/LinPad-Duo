@@ -85,7 +85,22 @@ public final class PoseMonitor {
     func windowChanged(size: CGSize, scale: CGFloat) {
         windowSize = size
         if scale > 0 { windowScale = scale }
+        noteScreenSize()
         evaluate()
+    }
+
+    @PerceptionIgnored private var sawOuterSize = false
+    @PerceptionIgnored private var sawInnerSize = false
+
+    /// Without hinge readings (an SDK older than 27.1, or iOS not reporting one yet), an
+    /// iPhone whose full-screen window has been both outer-screen and inner-screen size is
+    /// a foldable: closed and open then still work; book, laptop and tent need the hinge.
+    /// iPhone only, since iPad windows come in every size.
+    private func noteScreenSize() {
+        guard !hasHinge, windowSize.width > 0, UIDevice.current.userInterfaceIdiom == .phone else { return }
+        let shortSide = min(windowSize.width, windowSize.height) * windowScale
+        if shortSide < Self.outerScreenPixelLimit { sawOuterSize = true } else { sawInnerSize = true }
+        if sawOuterSize && sawInnerSize { hasHinge = true }
     }
 
     // MARK: Deciding
