@@ -111,3 +111,15 @@ Tick these off on the phone. If something's wrong, tell Claude Code what you did
       outer screen showing).
 - [ ] Hold the hinge near the point where book becomes flat: the name doesn't flicker.
 - [ ] If it always says "No hinge", the hinge code was switched off for the build (step 3).
+
+### Phase 3: sizes per screen
+- [ ] Open Firefox or VS Code on the inner screen, then close the phone: the app gets a bit
+      smaller on the outer screen and fits more in. Open it again: back to normal size.
+- [ ] Settings › Screen Sizes: move a slider for the screen you're on ("(now)" marks it).
+      Open Linux apps resize straight away, without restarting.
+- [ ] Under "Per app", make VS Code 80% and Firefox 120%. Each keeps its own size.
+- [ ] iPhone Settings › Display & Brightness › Text Size, make it bigger: Linux apps grow too
+      (turn off "Follow the iPhone's text size" to stop that).
+- [ ] Menus and pop-ups inside a resized app appear in the right place and at the same size.
+- Note: every Linux app resizes live, because LinPad tells the app its new size and it redraws.
+  If one doesn't (old X11 apps can be stubborn), tell Claude Code which.

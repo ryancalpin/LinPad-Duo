@@ -34,7 +34,13 @@ struct DuoSettingsSection: View {
                 }
                 row("Show pose and hinge angle", $showsPose, id: "poseOverlay",
                     "A small label at the top of the screen with what LinPad thinks the phone is doing. For testing.")
+                ThemedSeparator()
+                Text("Folding").font(.subheadline.weight(.semibold)).foregroundStyle(theme.secondaryText)
+                row("Size Linux apps for each screen", $autoScale, id: "autoScale",
+                    "Linux apps get bigger or smaller to suit the outer screen, the inner screen, each half of the fold and a monitor. Adjust each one under Screen Sizes below.")
             }
+            DuoScaleSettings()
+                .onChangeCompat(of: autoScale) { _, _ in DuoScaling.shared.refresh() }
         }
     }
 

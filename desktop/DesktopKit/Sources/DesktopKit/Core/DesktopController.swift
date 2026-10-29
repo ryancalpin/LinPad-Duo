@@ -218,6 +218,7 @@ final class DesktopController {
         windowManager.onTilingChange = { states in
             UserDefaults.standard.set(TilingSettings.encode(states), forKey: DesktopSettings.tilingKey)
         }
+        startDuo()
     }
 
     /// Built-in apps plus the guest's .desktop applications.

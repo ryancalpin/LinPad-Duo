@@ -347,13 +347,15 @@ final class LinuxSurfaceView: UIView {
     }
 }
 
-/// A desktop window's content for a Linux toplevel.
+/// A desktop window's content for a Linux toplevel, drawn at the app's zoom (Core/Duo/DuoScaling).
 struct LinuxWindowContent: UIViewRepresentable {
     let view: LinuxSurfaceView
+    /// The desktop app id, for the app's own size ("linux:code").
+    let appID: String
 
-    func makeUIView(context: Context) -> LinuxSurfaceView {
-        view
+    func makeUIView(context: Context) -> LinuxZoomHostView {
+        LinuxZoomHostView(surfaceView: view, appID: appID)
     }
 
-    func updateUIView(_ uiView: LinuxSurfaceView, context: Context) {}
+    func updateUIView(_ uiView: LinuxZoomHostView, context: Context) {}
 }

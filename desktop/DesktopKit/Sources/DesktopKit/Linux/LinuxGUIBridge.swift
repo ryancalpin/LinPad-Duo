@@ -747,15 +747,22 @@ final class LinuxGUIBridge {
         guard let view = popup.view, let container = view.superview,
               let parent = surfaces[popup.parentID], let parentView = parent.view else { return }
         var origin = parentView.convert(popup.position, to: container)
+        // A zoomed window (Core/Duo/DuoScaling) draws its popups at the same zoom: one Linux
+        // pixel of the parent is this many points in the container.
+        let zoom = max(parentView.convert(CGRect(x: 0, y: 0, width: 1, height: 1), to: container).width, 0.01)
+        let size = CGSize(width: popup.size.width * zoom, height: popup.size.height * zoom)
         var bounds = container.bounds
         // Keep menus above the on-screen keyboard as well.
         let keyboardTop = container.keyboardLayoutGuide.layoutFrame.minY
         if keyboardTop > 0 && keyboardTop < bounds.maxY {
             bounds.size.height = keyboardTop - bounds.minY
         }
-        origin.x = max(bounds.minX, min(origin.x, bounds.maxX - popup.size.width))
-        origin.y = max(bounds.minY, min(origin.y, bounds.maxY - popup.size.height))
-        view.frame = CGRect(origin: origin, size: popup.size)
+        origin.x = max(bounds.minX, min(origin.x, bounds.maxX - size.width))
+        origin.y = max(bounds.minY, min(origin.y, bounds.maxY - size.height))
+        view.transform = .identity
+        view.bounds = CGRect(origin: .zero, size: popup.size)
+        view.center = CGPoint(x: origin.x + size.width / 2, y: origin.y + size.height / 2)
+        view.transform = abs(zoom - 1) < 0.001 ? .identity : CGAffineTransform(scaleX: zoom, y: zoom)
     }
 
     // MARK: - Helpers

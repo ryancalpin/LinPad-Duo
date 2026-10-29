@@ -154,13 +154,15 @@ extension DesktopController: LinuxGUIBridgeDelegate {
             bridge.requestClose(surface.id)
             return
         }
+        // The app picked its size in Linux pixels; on screen it is drawn at its zoom.
+        let zoom = DuoScaling.shared.zoom(forAppID: appID)
         let window = windowManager.makeWindow(
             appID: appID,
             symbol: entry?.symbol ?? "macwindow",
             title: windowTitle(for: surface, entry: entry),
-            preferredSize: CGSize(width: surface.size.width,
-                                  height: surface.size.height + WindowManager.titleBarHeight))
-        window.content = AnyView(LinuxWindowContent(view: view))
+            preferredSize: CGSize(width: surface.size.width * zoom,
+                                  height: surface.size.height * zoom + WindowManager.titleBarHeight))
+        window.content = AnyView(LinuxWindowContent(view: view, appID: appID))
         let surfaceID = surface.id
         window.onCloseRequest = { [weak bridge] in bridge?.requestClose(surfaceID) }
         linuxWindows[surfaceID] = window.id
