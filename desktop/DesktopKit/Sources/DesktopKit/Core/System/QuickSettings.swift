@@ -83,6 +83,11 @@ struct SystemTrayButtons: View {
                             ThemeGlyph(symbol: volumeSymbol(volume), size: 12)
                         }
                         ThemeGlyph(symbol: status.batterySymbol, size: 12)
+                        if let level = status.batteryLevel {
+                            Text("\(Int((level * 100).rounded()))%")
+                                .monospacedDigit()
+                                .padding(.leading, -2)
+                        }
                     }
                     .font(.system(size: 12, weight: .semibold))
                     .padding(.horizontal, 8)

@@ -392,9 +392,14 @@ struct SettingsAppView: View {
         TilingSettings.decode(tilingJSON) ?? Array(repeating: TilingState(), count: WindowManager.defaultWorkspaceCount)
     }
 
+    // A row can still be read once after its workspace is deleted, so check the index.
     private func tilingBinding(_ index: Int) -> Binding<Bool> {
-        Binding(get: { tilingStates[index].isEnabled }, set: { enabled in
+        Binding(get: {
+            let states = tilingStates
+            return states.indices.contains(index) && states[index].isEnabled
+        }, set: { enabled in
             var states = tilingStates
+            guard states.indices.contains(index) else { return }
             states[index].isEnabled = enabled
             tilingJSON = TilingSettings.encode(states)
         })

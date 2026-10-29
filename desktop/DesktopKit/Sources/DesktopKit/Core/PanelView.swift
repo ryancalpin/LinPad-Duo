@@ -277,11 +277,25 @@ struct SystemMeters: View {
 
     var body: some View {
         WithPerceptionTracking {
-            HStack(spacing: 8) {
-                Meter(label: "CPU", value: monitor.cpuUsage,
-                      detail: monitor.cpuUsage.map { String(format: "%.0f%%", $0 * 100) })
-                Meter(label: "MEM", value: monitor.memoryUsage, detail: nil)
+            // Tapping the meters opens Task Manager, which lists what is using them.
+            Button {
+                controller?.open(appID: AppID.taskManager, arguments: [:])
+            } label: {
+                HStack(spacing: 8) {
+                    Meter(label: "CPU", value: monitor.cpuUsage,
+                          detail: monitor.cpuUsage.map { String(format: "%.0f%%", $0 * 100) })
+                    Meter(label: "MEM", value: monitor.memoryUsage, detail: nil)
+                }
+                .padding(.vertical, 6)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .hoverEffect(.highlight)
+            .padding(.vertical, -6)
+            .help("Open Task Manager")
+            .accessibilityElement(children: .combine)
+            .accessibilityHint("Opens Task Manager")
+            .accessibilityIdentifier("panel.systemMeters")
             // Hidden panels release their subscription, just like a dismissed widget.
             .task(id: samplingHostID) {
                 guard samplingHostID != nil, let controller else { return }

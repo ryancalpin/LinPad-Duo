@@ -41,8 +41,10 @@ struct OSDState: Equatable, Identifiable {
     }
 }
 
-/// Watches the system volume (hardware buttons, keyboard volume keys), the screen
-/// brightness and the keyboard's input language, and shows the OSD for each change.
+/// Watches the system volume (hardware buttons, keyboard volume keys) and the keyboard's
+/// input language, and shows the OSD for each change. Brightness is not watched: iOS
+/// changes it on its own (auto-brightness, Control Center), which popped the OSD up at
+/// random. LinPad's own brightness controls show it when they change it.
 @MainActor
 final class OSDObserver: NSObject {
     private weak var controller: DesktopController?
@@ -54,9 +56,6 @@ final class OSDObserver: NSObject {
         self.controller = controller
         super.init()
         let center = NotificationCenter.default
-        observers.append(center.addObserver(forName: UIScreen.brightnessDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.controller?.showOSD(.brightness(Double(UIScreen.main.brightness))) }
-        })
         observers.append(center.addObserver(forName: UITextInputMode.currentInputModeDidChangeNotification, object: nil,
                                             queue: .main) { [weak self] note in
             let language = (note.object as? UITextInputMode)?.primaryLanguage
