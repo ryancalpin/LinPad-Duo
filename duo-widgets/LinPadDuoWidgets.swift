@@ -33,7 +33,7 @@ struct LinuxJobLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.leading) {
                     Image(systemName: symbol(context.state.state))
                         .font(.title2)
-                        .foregroundStyle(tint(context.state.state))
+                        .foregroundStyle(jobTint(context.state.state))
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     elapsed(context)
@@ -46,7 +46,7 @@ struct LinuxJobLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: 4) {
                         if let progress = context.state.progress {
-                            ProgressView(value: progress).tint(tint(context.state.state))
+                            ProgressView(value: progress).tint(jobTint(context.state.state))
                         }
                         if !context.state.detail.isEmpty {
                             Text(context.state.detail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
@@ -54,7 +54,7 @@ struct LinuxJobLiveActivity: Widget {
                     }
                 }
             } compactLeading: {
-                Image(systemName: symbol(context.state.state)).foregroundStyle(tint(context.state.state))
+                Image(systemName: symbol(context.state.state)).foregroundStyle(jobTint(context.state.state))
             } compactTrailing: {
                 if let progress = context.state.progress, context.state.state == "running" {
                     Text("\(Int((progress * 100).rounded()))%").font(.caption.monospacedDigit())
@@ -62,7 +62,7 @@ struct LinuxJobLiveActivity: Widget {
                     elapsed(context).font(.caption.monospacedDigit()).frame(maxWidth: 44)
                 }
             } minimal: {
-                Image(systemName: symbol(context.state.state)).foregroundStyle(tint(context.state.state))
+                Image(systemName: symbol(context.state.state)).foregroundStyle(jobTint(context.state.state))
             }
             .widgetURL(LinuxJobLinks.open)
         }
@@ -86,7 +86,7 @@ private func symbol(_ state: String) -> String {
     }
 }
 
-private func tint(_ state: String) -> Color {
+private func jobTint(_ state: String) -> Color {
     switch state {
     case "done": .green
     case "failed": .red
@@ -102,7 +102,7 @@ private struct LockScreenJobView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Image(systemName: symbol(state.state)).foregroundStyle(tint(state.state))
+                Image(systemName: symbol(state.state)).foregroundStyle(jobTint(state.state))
                 Text(attributes.title).font(.headline).lineLimit(1)
                 Spacer()
                 if state.state == "running" {
