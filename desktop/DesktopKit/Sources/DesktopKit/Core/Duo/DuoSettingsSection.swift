@@ -59,6 +59,12 @@ struct DuoSettingsSection: View {
                         .buttonStyle(.bordered)
                         .tint(theme.accent)
                 }
+                row("Live Activities for long jobs", $liveActivities, id: "liveActivities",
+                    "Jobs started with notify-phone show their progress in the Dynamic Island and on the Lock Screen; tap one to come back to LinPad. Try: notify-phone run \"Build\" -- make")
+                row("Shortcuts, Siri and widgets", $shortcuts, id: "shortcuts",
+                    "The Shortcuts app, Siri, the Action button and LinPad's Home Screen widget can open a workspace, open a terminal, run a script, or start your dev setup (~/.config/linpad/dev-setup.sh).")
+                row("On-device AI (ask)", $onDeviceAI, id: "onDeviceAI",
+                    "In a terminal, ask \"a question\" answers with Apple's on-device model, with no internet. Needs Apple Intelligence on, and LinPad in front while it answers.")
             }
             .onChangeCompat(of: externalDisplay) { _, on in
                 if on { DuoDisplayRouter.shared.moveToExternal() } else { DuoDisplayRouter.shared.moveToPhone() }

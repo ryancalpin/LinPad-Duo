@@ -15,7 +15,11 @@ extension DesktopController {
     /// Once Linux has booted: the Duo's Linux commands and the job list.
     func startDuoServices() {
         Task { await DuoGuestTools.install(on: host) }
-        DuoJobCenter.shared.start(host: host)
+        let jobs = DuoJobCenter.shared
+        DuoAskService.shared.start(guestRoot: (host as? any LinuxGraphicsHost)?.guestRootURL)
+        jobs.onTick.append { DuoAskService.shared.poll() }
+        jobs.start(host: host)
+        DuoActions.shared.desktopIsReady(self)
     }
 
     /// The place the desktop is shown right now, for Linux app sizes.

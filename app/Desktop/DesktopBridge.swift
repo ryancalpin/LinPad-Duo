@@ -45,6 +45,8 @@ final class DesktopBridge: NSObject {
         // linker from dropping a class that only Info.plist mentions.
         DuoDisplayRouter.shared.desktopViewController = controller
         _ = DuoExternalDisplaySceneDelegate.self
+        // notify-phone jobs in the Dynamic Island and on the Lock Screen.
+        if #available(iOS 16.2, *) { DuoLiveActivities.shared.start() }
         return controller
     }
 }

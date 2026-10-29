@@ -90,6 +90,27 @@ protection (TXM), and the Duo has it. If StikDebug can't switch it on, LinPad st
 "Compatibility mode" after about 20 seconds. Everything still works, just slower.
 Settings › Fast Mode › Status says which mode is running.
 
+## 5b. Adding the widget extension (for Live Activities and the Home Screen widget)
+
+Once, in Xcode. The app works without it; only the Dynamic Island, Lock Screen jobs and the
+Home Screen widget need it. Apple only lets Xcode itself create this kind of target safely,
+which is why it's a manual step.
+
+1. Open `iSH.xcodeproj` in Xcode.
+2. **File › New › Target…** › iOS › **Widget Extension** › Next.
+3. Product Name: `LinPadDuoWidgets`. Tick **Include Live Activity**. Untick "Include Configuration
+   App Intent" if it's there. Finish. When asked "Activate scheme?", choose **Cancel**.
+4. In the left sidebar, open the new **LinPadDuoWidgets** group. Select every `.swift` file
+   Xcode made in it, right-click › **Delete** › **Move to Trash**. Keep `Info.plist` and `Assets`.
+5. Right-click the **LinPadDuoWidgets** group › **Add Files to "iSH"…** › pick
+   `duo-widgets/LinPadDuoWidgets.swift`. Under "Add to targets", tick only **LinPadDuoWidgets**.
+6. In the sidebar, select `app/Desktop/LinuxJobAttributes.swift`. In the right-hand panel
+   (File inspector) under **Target Membership**, tick **LinPadDuoWidgets** as well
+   (iSH-ARM64 stays ticked).
+7. Click the project at the top of the sidebar › **LinPadDuoWidgets** target › **General** ›
+   Minimum Deployments: **16.2**. Then **Signing & Capabilities**: pick your team.
+8. Build again with the command in step 3. The widget extension is built and put inside the app.
+
 ## 6. What to test, phase by phase
 
 Tick these off on the phone. If something's wrong, tell Claude Code what you did and what you saw.
@@ -184,3 +205,21 @@ Tick these off on the phone. If something's wrong, tell Claude Code what you did
 - [ ] Settings › Screen Sizes › Monitor changes how big Linux apps are on it.
 - [ ] "Show on iPhone" brings the desktop back; unplugging the monitor does too. Nothing closes.
 - [ ] Settings › iPhone Duo › "Use a USB-C monitor" off: the monitor mirrors the phone instead.
+
+### Phase 10: iPhone features
+- [ ] (Needs step 5b.) In foot: `notify-phone run "Test build" -- sleep 60`. The Dynamic Island
+      shows "Test build" with a timer; lock the phone and it's on the Lock Screen too. When it
+      finishes it shows Done. Tap it to come back to LinPad.
+- [ ] Progress: `id=$(notify-phone start "Copying")`, then `notify-phone update $id 50`,
+      then `notify-phone done $id`.
+- [ ] Shortcuts app › new shortcut › search "LinPad": "Run Script in LinPad" with `echo hi`.
+      Running it opens LinPad and runs it in a terminal.
+- [ ] Say "Hey Siri, start my dev setup in LinPad Duo". It opens VS Code and a terminal, or runs
+      `~/.config/linpad/dev-setup.sh` if you've written one.
+- [ ] The Action button can run any of these (iPhone Settings › Action Button › Shortcut).
+- [ ] (Needs step 5b.) Add the LinPad widget to the Home Screen; its buttons open a workspace,
+      a terminal or the dev setup (the dev setup asks first).
+- [ ] With Apple Intelligence on, in foot: `ask "How do I see which programs use the most memory?"`
+      With Wi-Fi off it still answers. `cat file.txt | ask "Summarise this"` works too.
+- [ ] Cameras: a Linux video app (or `ffmpeg -f v4l2 -i /dev/video0 -frames 1 shot.jpg`) uses
+      the camera facing you, on whichever screen you're using.

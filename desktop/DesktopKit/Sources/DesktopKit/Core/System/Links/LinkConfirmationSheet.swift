@@ -18,6 +18,11 @@ public final class LinPadLinkInbox {
     @discardableResult
     public func receive(_ url: URL) -> Bool {
         guard url.scheme?.lowercased() == LinPadLink.scheme else { return false }
+        // The Home Screen widget's buttons (Core/Duo/DuoActions).
+        if let action = DuoAction(url: url) {
+            DuoActions.shared.perform(action, fromLink: true)
+            return true
+        }
         guard let link = LinPadLink.parse(url) else {
             rejected = url
             return true

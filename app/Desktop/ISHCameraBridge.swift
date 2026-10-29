@@ -43,10 +43,14 @@ final class ISHCameraBridge: NSObject, @unchecked Sendable {
         let discovery = AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera],
                                                          mediaType: .video, position: .unspecified)
         var names: [String] = []
+        // "iPhone" or "iPad". On iPhone Duo the front wide-angle camera is the system's
+        // virtual front camera: it streams from the camera above whichever screen LinPad is
+        // on and follows the phone as it opens and closes, so /dev/video0 always faces you.
+        let model = UIDevice.current.model
         for position in [AVCaptureDevice.Position.front, .back]
         where discovery.devices.contains(where: { $0.position == position }) {
             positions.append(position)
-            names.append(position == .back ? "iPad Camera (Back)" : "iPad Camera (Front)")
+            names.append(position == .back ? "\(model) Camera (Back)" : "\(model) Camera (Front)")
         }
         guard !positions.isEmpty else {
             log.info("no cameras")
