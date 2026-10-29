@@ -40,6 +40,11 @@ final class DesktopBridge: NSObject {
             .ignoresSafeArea()
         let controller = DesktopHostingController(rootView: root)
         controller.view.backgroundColor = .black
+        // A USB-C monitor gets the desktop (Info.plist's external display scene); the router
+        // moves this controller there and back. Naming the scene delegate here also keeps the
+        // linker from dropping a class that only Info.plist mentions.
+        DuoDisplayRouter.shared.desktopViewController = controller
+        _ = DuoExternalDisplaySceneDelegate.self
         return controller
     }
 }

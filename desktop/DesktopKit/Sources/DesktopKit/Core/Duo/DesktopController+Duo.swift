@@ -6,6 +6,7 @@ extension DesktopController {
     func startDuo() {
         duoPointer.controller = self
         duoKeyboard.controller = self
+        DuoDisplayRouter.shared.controller = self
         pose.observe { [weak self] _, _ in self?.duoPoseChanged() }
         duoPoseChanged()
         DuoControllerKeys.shared.start(controller: self)
@@ -19,7 +20,7 @@ extension DesktopController {
 
     /// The place the desktop is shown right now, for Linux app sizes.
     var duoScreenProfile: DuoScreenProfile {
-        DuoScreenProfile.forPose(pose.pose)
+        DuoDisplayRouter.shared.isOnExternalDisplay ? .externalDisplay : DuoScreenProfile.forPose(pose.pose)
     }
 
     func duoPoseChanged() {
@@ -32,6 +33,8 @@ extension DesktopController {
     func updatePoseLayout() {
         let manager = windowManager
         let layout: PoseLayout?
+        // On a monitor the fold says nothing about where windows should go.
+        guard !DuoDisplayRouter.shared.isOnExternalDisplay else { return manager.setPoseLayout(nil) }
         switch pose.pose {
         case .closed, .tent:
             layout = DuoSettings.isOn(DuoSettings.outerScreenModeKey) ? .single : nil

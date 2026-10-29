@@ -215,7 +215,7 @@ public struct DesktopRootView: View {
 
     /// Laptop pose: the bottom half becomes a keyboard and trackpad, unless both are attached.
     private var showsLaptopDeck: Bool {
-        laptopDeckEnabled && controller.pose.pose == .laptop
+        laptopDeckEnabled && controller.pose.pose == .laptop && !DuoDisplayRouter.shared.isOnExternalDisplay
             && !(controller.keyboard.isConnected && controller.keyboard.hasPointer)
     }
 

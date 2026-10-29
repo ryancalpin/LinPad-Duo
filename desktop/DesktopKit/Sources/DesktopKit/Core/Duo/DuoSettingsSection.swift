@@ -52,6 +52,16 @@ struct DuoSettingsSection: View {
             SettingsSection(title: "Phone Features", symbol: "iphone") {
                 row("Controllers type keys", $controllerKeys, id: "controllerKeys",
                     "A game controller presses keys in the focused Linux app: the D-pad and left stick are the arrow keys, A is Space, B is Escape, X is Return, Y is Tab, the shoulders are Page Up and Down, the triggers Shift and Ctrl.")
+                row("Use a USB-C monitor", $externalDisplay, id: "externalDisplay",
+                    "A connected monitor shows the whole desktop, at its own size (Screen Sizes › Monitor), and the phone becomes its keyboard and trackpad. Off, the monitor mirrors the phone.")
+                if DuoDisplayRouter.shared.hasExternalDisplay && !DuoDisplayRouter.shared.isOnExternalDisplay {
+                    Button("Show on Monitor") { DuoDisplayRouter.shared.moveToExternal() }
+                        .buttonStyle(.bordered)
+                        .tint(theme.accent)
+                }
+            }
+            .onChangeCompat(of: externalDisplay) { _, on in
+                if on { DuoDisplayRouter.shared.moveToExternal() } else { DuoDisplayRouter.shared.moveToPhone() }
             }
             if let controller { DuoUSBSettingsSection(host: controller.host) }
         }

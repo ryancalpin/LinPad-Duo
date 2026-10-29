@@ -175,3 +175,12 @@ Tick these off on the phone. If something's wrong, tell Claude Code what you did
 - Not possible on iPhone: serial cables, Arduinos and printers that need drivers. iOS
   doesn't let apps reach USB devices directly. A real Linux joystick device would need the
   emulator's kernel changed; controllers type keys instead.
+
+### Phase 9: monitor
+- [ ] Plug a USB-C monitor (or a USB-C hub with HDMI) into the phone. The whole desktop moves
+      to the monitor; the phone shows "Showing on the monitor" with a trackpad and keyboard.
+- [ ] Move the pointer with the trackpad and click into foot; type with the phone's keyboard.
+- [ ] With a Bluetooth keyboard connected, typing goes to the monitor's desktop.
+- [ ] Settings › Screen Sizes › Monitor changes how big Linux apps are on it.
+- [ ] "Show on iPhone" brings the desktop back; unplugging the monitor does too. Nothing closes.
+- [ ] Settings › iPhone Duo › "Use a USB-C monitor" off: the monitor mirrors the phone instead.
