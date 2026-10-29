@@ -42,6 +42,13 @@ fi
 echo "$ROOTFS_SHA256  $ROOTFS" | shasum -a 256 -c -
 echo "$ROOTFS_VERSION" > "$WORK/linpad-rootfs.version"
 
+say "GPU libraries (virglrenderer, MoltenVK)"
+if [ -f gpu/prefix-ios/lib/libvirglrenderer.a ] && [ -f gpu/prefix-ios/lib/libMoltenVK.a ]; then
+    echo "already built"
+else
+    gpu/build-third-party.sh ios
+fi
+
 say "App (unsigned Release build, native JIT, virtgpu)"
 BUILD_NUMBER=$(git rev-list --count HEAD 2>/dev/null || echo 1)
 xcodebuild -skipMacroValidation -project iSH.xcodeproj -scheme iSH-ARM64 -configuration Release \

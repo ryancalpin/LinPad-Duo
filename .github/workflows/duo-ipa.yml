@@ -42,9 +42,17 @@ jobs:
 
       - name: Build tools
         run: |
-          brew install meson ninja llvm lld libarchive coreutils
+          brew install meson ninja llvm lld libarchive coreutils pkgconf
+          python3 -m pip install --user --break-system-packages mako || python3 -m pip install --user mako
           echo "$(brew --prefix lld)/bin" >> "$GITHUB_PATH"
           echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+
+      # virglrenderer and MoltenVK for the GPU bridge, built once per change to their pins.
+      - name: Cache the GPU libraries
+        uses: actions/cache@v4
+        with:
+          path: gpu/prefix-ios
+          key: gpu-prefix-ios-${{ hashFiles('gpu/build-third-party.sh', 'gpu/patches/**', 'gpu/cross/**') }}
 
       - name: Cache the Linux system download
         uses: actions/cache@v4
@@ -53,7 +61,9 @@ jobs:
           key: linpad-rootfs-1.5.0
 
       - name: Build the IPA
-        run: release/duo-build-ipa.sh 2>&1 | tee "$RUNNER_TEMP/build.log"
+        run: |
+          set -o pipefail
+          release/duo-build-ipa.sh 2>&1 | tee "$RUNNER_TEMP/build.log"
 
       - name: Errors from the build
         if: failure()
