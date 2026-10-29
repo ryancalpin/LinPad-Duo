@@ -44,6 +44,8 @@ struct DuoSettingsSection: View {
                     "When the phone closes, each window fills the small screen; the button in the corner lists them to switch. Linux keeps running, and opening the phone puts every window back.")
                 row("Book pose: two sides", $bookSplit, id: "bookSplit",
                     "Half-open like a book, each half of the screen holds its own windows and nothing sits across the fold. Drag a window by its title bar to either side; the button on the fold swaps them.")
+                row("Tent pose status board", $tentBoard, id: "tentBoard",
+                    "Standing up like a tent, the outer screen shows the time, CPU and memory, and long jobs: anything started with notify-phone, builds and Claude Code. Tap it to see the desktop.")
             }
             DuoScaleSettings()
                 .onChangeCompat(of: autoScale) { _, _ in DuoScaling.shared.refresh() }

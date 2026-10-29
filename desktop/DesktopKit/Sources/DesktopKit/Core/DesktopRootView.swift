@@ -26,6 +26,9 @@ public struct DesktopRootView: View {
     @AppStorage(DuoSettings.laptopDeckKey) private var laptopDeckEnabled = true
     @AppStorage(DuoSettings.outerScreenModeKey) private var outerScreenModeEnabled = true
     @AppStorage(DuoSettings.bookSplitKey) private var bookSplitEnabled = true
+    @AppStorage(DuoSettings.tentBoardKey) private var tentBoardEnabled = true
+    /// The tent board was tapped away; it comes back the next time the phone is set up as a tent.
+    @State private var tentBoardDismissed = false
     @Environment(\.colorScheme) private var systemColorScheme
 
     public init(host: any LinuxHost, apps: [DesktopAppDescriptor]) {
@@ -63,6 +66,13 @@ public struct DesktopRootView: View {
                             .transition(.opacity.combined(with: .scale(scale: 1.02)))
                     }
                 }
+                .overlay {
+                    if tentBoardEnabled && controller.pose.pose == .tent && !tentBoardDismissed {
+                        DuoTentBoard(controller: controller) { tentBoardDismissed = true }
+                            .transition(.opacity)
+                    }
+                }
+                .onChangeCompat(of: controller.pose.pose) { _, _ in tentBoardDismissed = false }
                 .overlay {
                     if controller.isLocked {
                         LockScreen(controller: controller).transition(.opacity)
@@ -143,6 +153,7 @@ public struct DesktopRootView: View {
                 controller.presentOnboarding()
             }
             await controller.boot.run(host: controller.host, linux: controller.linux)
+            controller.startDuoServices()
             controller.offerSystemUpdateIfAvailable()
             controller.startUpdateChecks()
             controller.startMaintenance()

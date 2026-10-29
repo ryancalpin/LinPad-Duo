@@ -10,6 +10,12 @@ extension DesktopController {
         duoPoseChanged()
     }
 
+    /// Once Linux has booted: the Duo's Linux commands and the job list.
+    func startDuoServices() {
+        Task { await DuoGuestTools.install(on: host) }
+        DuoJobCenter.shared.start(host: host)
+    }
+
     /// The place the desktop is shown right now, for Linux app sizes.
     var duoScreenProfile: DuoScreenProfile {
         DuoScreenProfile.forPose(pose.pose)

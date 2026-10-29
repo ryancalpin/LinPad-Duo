@@ -153,3 +153,12 @@ Tick these off on the phone. If something's wrong, tell Claude Code what you did
 - [ ] The round ⇄ button at the bottom of the fold swaps the two sides.
 - [ ] Open a third app: it opens on the side the focused window isn't on.
 - [ ] Open the phone flat: back to the normal tiling desktop.
+
+### Phase 7: tent status board
+- [ ] In foot: `notify-phone run "Test job" -- sleep 120`
+- [ ] Stand the phone up like a tent. The outer screen shows the time, CPU, memory and
+      "Test job" with a running timer.
+- [ ] Start Claude Code or a build (`make`, `npm install`): after 30 seconds it shows up too.
+- [ ] Tap the board: the desktop shows. Close and re-tent the phone: the board is back.
+- [ ] `notify-phone` commands: `start`, `update`, `done`, `fail`, `run` (type `notify-phone`
+      on its own to see how to use them).
