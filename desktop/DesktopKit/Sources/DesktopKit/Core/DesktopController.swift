@@ -94,6 +94,10 @@ final class DesktopController {
     /// The on-screen trackpad's pointer and keyboard (laptop pose, monitor mode).
     let duoPointer = DuoVirtualPointer()
     let duoKeyboard = DuoKeyboardModel()
+    /// Settings › Safety and Battery: the heat guard and the Face ID lock.
+    let duoGuard = DuoGuard()
+    let appLock = DuoAppLock()
+    @PerceptionIgnored var duoWarnedAboutRemoteLogin = false
     private(set) var style = DesktopStyle.stored(UserDefaults.standard.string(forKey: DesktopStyle.storageKey) ?? "")
     let icons: DesktopIconStore
     @PerceptionIgnored let input = DesktopInputCoordinator()

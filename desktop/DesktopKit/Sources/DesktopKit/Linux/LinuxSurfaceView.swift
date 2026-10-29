@@ -120,6 +120,15 @@ final class LinuxSurfaceView: UIView {
         trackedTouch = touch
         focusKeyboard()
         let point = touch.location(in: self)
+        // Apple Pencil presses at once, like a mouse button, so it draws and selects
+        // (Settings › iPhone Duo › "Apple Pencil draws").
+        if touch.type == .pencil && DuoSettings.isOn(DuoSettings.pencilKey) {
+            pressedButton = Button.left
+            bridge?.pointerMotion(surfaceID, point)
+            bridge?.pointerButton(surfaceID, point, button: pressedButton, pressed: true)
+            touchState = .dragging
+            return
+        }
         if touch.type == .indirectPointer {
             // Secondary clicks belong to `secondaryClick`; UIKit does not reliably deliver
             // them here, and handling both would send BTN_RIGHT twice.

@@ -223,3 +223,22 @@ Tick these off on the phone. If something's wrong, tell Claude Code what you did
       With Wi-Fi off it still answers. `cat file.txt | ask "Summarise this"` works too.
 - [ ] Cameras: a Linux video app (or `ffmpeg -f v4l2 -i /dev/video0 -frames 1 shot.jpg`) uses
       the camera facing you, on whichever screen you're using.
+
+### Phase 11: safety and polish
+- [ ] Backups (already in LinPad): Settings › Maintenance › Back Up Now, choose iCloud Drive.
+      Set it to weekly. Delete a test file in `~`, then Restore: the file is back.
+- [ ] Settings › Safety and Battery › Require Face ID on. Switch away and back: LinPad asks for
+      Face ID. The app switcher shows it covered. A command left running in foot kept running.
+- [ ] Heat and battery guard: turn on Low Power Mode. Within 15 seconds the "Now" row says
+      it's slowing busy programs; "Check Now" lists what uses the most CPU. Turn Low Power
+      Mode off: everything goes back to normal.
+- [ ] If you ever install and start an SSH server in Linux, LinPad warns you once.
+- [ ] Getting fixes from LinPad: `tools/duo-merge-upstream.sh` (DUO-UPDATING.md). Today it
+      says "Already up to date".
+- [ ] Apple Pencil (once Apple switches it on for the Duo): drawing in a Linux paint app
+      draws instead of scrolling.
+- Faster launches, what I found: LinPad already keeps Thunar ready in the background
+  (`/etc/ishwl/prewarm`). The big cost is the CPU emulator: measured on a fast Mac, Firefox
+  takes 8–12 s to open and Thunar 1.3 s. Fast mode (step 5) is what makes the biggest
+  difference. Keeping Firefox or VS Code running in the background would cost 1–2 GB of
+  memory each, which on a phone gets LinPad closed by iOS, so I didn't add that.

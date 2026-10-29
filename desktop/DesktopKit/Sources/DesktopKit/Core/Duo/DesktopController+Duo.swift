@@ -20,6 +20,24 @@ extension DesktopController {
         jobs.onTick.append { DuoAskService.shared.poll() }
         jobs.start(host: host)
         DuoActions.shared.desktopIsReady(self)
+        duoGuard.start(host: host)
+        Task { [weak self] in
+            while !Task.isCancelled {
+                await self?.warnIfRemoteLoginRuns()
+                try? await Task.sleep(for: .seconds(300))
+            }
+        }
+    }
+
+    /// LinPad ships no SSH server; one the user installed and started is worth a warning,
+    /// once per launch: anyone on the same network who knows a password can then log in.
+    private func warnIfRemoteLoginRuns() async {
+        guard !duoWarnedAboutRemoteLogin else { return }
+        let result = await host.run("pidof sshd dropbear >/dev/null 2>&1")
+        guard result.succeeded else { return }
+        duoWarnedAboutRemoteLogin = true
+        notify("Remote login (SSH) is running in Linux. Anyone on your Wi-Fi who knows a password can log in. Stop it with: rc-service sshd stop",
+               action: DesktopToast.Action(title: "OK") {}, lifetime: .seconds(30))
     }
 
     /// The place the desktop is shown right now, for Linux app sizes.

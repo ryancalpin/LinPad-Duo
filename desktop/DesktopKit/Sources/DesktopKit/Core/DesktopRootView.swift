@@ -107,6 +107,9 @@ public struct DesktopRootView: View {
                 DuoPoseOverlay(monitor: controller.pose)
             }
         }
+        .overlay {
+            if controller.appLock.isLocked { DuoAppLockView(lock: controller.appLock) }
+        }
         .duoPoseTracking(controller.pose)
         .onChangeCompat(of: controller.pose.foldInWindow) { _, _ in controller.updatePoseLayout() }
         .onChangeCompat(of: controller.windowManager.desktopSize) { _, _ in controller.updatePoseLayout() }

@@ -70,6 +70,17 @@ struct DuoSettingsSection: View {
                 if on { DuoDisplayRouter.shared.moveToExternal() } else { DuoDisplayRouter.shared.moveToPhone() }
             }
             if let controller { DuoUSBSettingsSection(host: controller.host) }
+            SettingsSection(title: "Safety and Battery", symbol: "lock.shield") {
+                row("Require Face ID", $appLock, id: "appLock",
+                    "Face ID, Touch ID or the passcode to open LinPad and to come back to it. LinPad hides itself in the app switcher. Linux keeps running while it's locked.")
+                row("Heat and battery guard", $heatGuard, id: "heatGuard",
+                    "When the phone gets hot or Low Power Mode is on, the busiest Linux programs get the lowest priority; if it gets very hot they pause until it cools. The desktop, sound and terminals are never slowed.")
+                if let controller { DuoGuardStatus(guard: controller.duoGuard) }
+                row("Apple Pencil draws", $pencil, id: "pencil",
+                    "Apple Pencil presses and drags in Linux apps, for drawing and handwriting, instead of scrolling like a finger. Ready for when Apple switches Pencil on for iPhone Duo.")
+            }
+            .onChangeCompat(of: appLock) { _, _ in controller?.appLock.settingChanged() }
+            .onChangeCompat(of: heatGuard) { _, _ in controller?.duoGuard.conditionsChanged() }
         }
     }
 
