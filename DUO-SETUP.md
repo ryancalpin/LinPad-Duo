@@ -80,32 +80,31 @@ ideviceinstaller -u PHONE_ID install "build-ios-release/Release-iphoneos/iSH ARM
   so it sits next to stock LinPad if you have that too.
 - The first launch unpacks Linux, which takes a few minutes. Leave the app open.
 
-## 4b. Building in the cloud instead (for an Intel Mac): Codemagic
+## 4b. Building in the cloud instead (for an Intel Mac): GitHub
 
-Xcode 27 doesn't run on Intel Macs, so Codemagic builds the app on its Macs and you install
-the result from yours. Its free plan has 500 build minutes a month; one build takes roughly
-30–45 minutes.
+Xcode 27 doesn't run on Intel Macs, so GitHub builds the app on its own Macs, free for this
+public repository. Every push to the `duo` branch starts a build (about 20 minutes); you can
+also start one by hand: the repository on github.com › **Actions** › **LinPad Duo IPA** ›
+**Run workflow** › branch `duo`.
 
-1. Go to codemagic.io, sign up with your GitHub account, and add the app
-   **ryancalpin/LinPad-Duo** (allow Codemagic to see that repository when GitHub asks).
-2. When it asks how to configure the build, choose **codemagic.yaml** (it's in the repo).
-3. **Start new build** › branch **duo** › workflow **LinPad Duo IPA**.
-4. When it finishes, download **LinPad-Duo.ipa** from the build's **Artifacts**. It's about
-   700 MB, because the Linux system is inside.
-5. Install it from your Intel Mac with **Sideloadly** (free, works on Intel): plug the phone in,
-   drag the IPA onto Sideloadly, type your Apple ID, Start. It signs the app with your Apple ID.
-   AltStore (AltServer on the Mac) or SideStore work too.
-6. On the phone: Developer Mode on, and trust your Apple ID in Settings › General › VPN &
+1. On github.com, open the repository › **Actions** › the newest green **LinPad Duo IPA** run.
+2. Under **Artifacts**, download **LinPad-Duo-ipa** (you must be signed in to GitHub). It's a
+   zip of about 600 MB; double-click it to get **LinPad-Duo.ipa**.
+3. Install it from your Intel Mac with **Sideloadly** (free, works on Intel): plug the phone
+   in, drag the IPA onto Sideloadly, type your Apple ID, Start. It signs the app with your
+   Apple ID. AltStore (AltServer on the Mac) or SideStore work too.
+4. On the phone: Developer Mode on, and trust your Apple ID in Settings › General › VPN &
    Device Management.
 
 What's different about a cloud build:
 - With a free Apple ID the app stops opening after 7 days; Sideloadly or SideStore can
   refresh it. The widget extension (5b) isn't in it, so no Dynamic Island jobs or widget.
-- Codemagic has Xcode 27.0 right now, not 27.1. The build notices and leaves out the hinge
-  code, so **closed and open work, but book, laptop and tent poses don't** until Codemagic
-  adds Xcode 27.1. Then change `xcode: latest` in `codemagic.yaml` to `27.1` if needed and
-  build again.
-- If the build fails, copy the red error lines from Codemagic's log to Claude Code.
+- GitHub's Macs have Xcode 26.6 right now, not 27.1. The build notices and leaves out the
+  hinge code, so **closed and open work, but book, laptop and tent poses don't** yet. Apple
+  also says apps built with Xcode 26 don't draw under the status bar and camera on the Duo,
+  so expect a strip at the top. Both go away once GitHub adds Xcode 27.1; the build picks
+  the newest Xcode by itself.
+- `codemagic.yaml` does the same on Codemagic, if you ever prefer it.
 
 ## 5. Fast mode (optional, makes Linux several times faster)
 
