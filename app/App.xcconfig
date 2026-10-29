@@ -19,3 +19,6 @@ CODE_SIGN_ENTITLEMENTS = $(LINPAD_ENTITLEMENTS)
 HEADER_SEARCH_PATHS = $(inherited) $(SRCROOT) $(SRCROOT)/deps/libarchive/libarchive
 // AccessibilityFixes.m contains a static constructor that we don't want removed
 OTHER_LDFLAGS = -ObjC $(LINUX_APP_LDFLAGS) -u _accessibilityfixes_init
+// AppDelegate finds the JIT (ish_jit_try_enable and friends) with dlsym. Archives strip
+// installed products, and the default "all" style would drop those exports too.
+STRIP_STYLE = non-global
