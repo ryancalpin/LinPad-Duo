@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install LinPad Duo</title>
+<style>
+  :root { color-scheme: light dark; --bg: #f5f5f7; --fg: #1d1d1f; --muted: #6e6e73; --accent: #0a84ff; --card: #fff; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #000; --fg: #f5f5f7; --muted: #a1a1a6; --card: #1c1c1e; } }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 17px/1.45 -apple-system, system-ui, sans-serif; }
+  main { max-width: 520px; margin: 0 auto; padding: 32px 16px 48px; }
+  h1 { font-size: 30px; margin: 0 0 4px; }
+  .muted { color: var(--muted); font-size: 15px; }
+  .install { display: block; text-align: center; margin: 28px 0; padding: 16px; border-radius: 14px;
+             background: var(--accent); color: #fff; font-weight: 600; font-size: 19px; text-decoration: none; }
+  .card { background: var(--card); border-radius: 14px; padding: 4px 18px; }
+  li { margin: 10px 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>LinPad Duo</h1>
+  <p class="muted">Version @VERSION@ · build @COMMIT@</p>
+  <a class="install" href="itms-services://?action=download-manifest&amp;url=https://ryancalpin.github.io/LinPad-Duo/manifest.plist">Install on this iPhone</a>
+  <div class="card">
+    <ol>
+      <li>Open this page in <strong>Safari</strong> on the phone and tap Install. It's about 600 MB, so use Wi-Fi.</li>
+      <li>Watch the Home Screen: the LinPad Duo icon fills up as it downloads.</li>
+      <li>The first time: Settings › Privacy &amp; Security › <strong>Developer Mode</strong> on, then restart.</li>
+      <li>Open LinPad Duo and leave it open while it unpacks Linux (a few minutes).</li>
+    </ol>
+  </div>
+  <p class="muted">Only works on iPhones registered in your Apple Developer account before this build ran. If Install does nothing, register the phone and build again.</p>
+</main>
+</body>
+</html>

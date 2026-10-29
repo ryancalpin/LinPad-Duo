@@ -1,12 +1,22 @@
 #!/bin/bash
-# Builds LinPad Duo as an IPA that SideStore, AltStore, Sideloadly or iloader re-sign with
-# your own Apple ID, so it installs from any computer (an Intel Mac included) with a free
-# account. Used by codemagic.yaml; runs on any Apple-silicon Mac with Xcode 27.
+# Builds LinPad Duo as an IPA. Used by .github/workflows/duo-ipa.yml and codemagic.yaml;
+# runs on any Apple-silicon Mac with Xcode.
 #
 #   release/duo-build-ipa.sh              -> build-duo/LinPad-Duo.ipa
 #
-# Env: ROOTFS_URL / ROOTFS_VERSION (the Linux system to put inside; default: LinPad 1.5.0's
-# published one), OUT (the IPA's path).
+# Two kinds of IPA:
+# * Signed (a paid Apple Developer account): with ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (an
+#   App Store Connect API key, Admin) and APPLE_TEAM_ID set, Xcode signs it for development
+#   with your team, for every device registered in your account. It installs straight from
+#   Safari (build-duo/site has the install page and manifest) and lasts a year. Development
+#   signing keeps get-task-allow, which fast mode (StikDebug) needs.
+# * Otherwise: ad-hoc signed, for SideStore, AltStore, Sideloadly or iloader to re-sign
+#   with a free Apple ID.
+#
+# Env: ROOTFS_URL / ROOTFS_VERSION / ROOTFS_SHA256 (the Linux system to put inside; default:
+# LinPad 1.5.0's published one), OUT (the IPA's path), IPA_URL (where the signed IPA will be
+# downloaded from, for the install manifest), DUO_ENTITLEMENTS (signed builds; default the
+# more-memory entitlements, falling back to the plain ones if the account can't have them).
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT"
@@ -49,11 +59,65 @@ else
     gpu/build-third-party.sh ios
 fi
 
-say "App (unsigned Release build, native JIT, virtgpu)"
 BUILD_NUMBER=$(git rev-list --count HEAD 2>/dev/null || echo 1)
-xcodebuild -skipMacroValidation -project iSH.xcodeproj -scheme iSH-ARM64 -configuration Release \
-    -destination generic/platform=iOS SYMROOT="$WORK/products" IPHONEOS_DEPLOYMENT_TARGET=16.0 \
-    ISH_JIT_BUILD=enabled ISH_VIRTGPU=enabled CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+VERSION=$(sed -n 's/^MARKETING_VERSION = //p' app/AppARM64.xcconfig)
+COMMON=(-skipMacroValidation -project iSH.xcodeproj -scheme iSH-ARM64 -configuration Release
+        -destination generic/platform=iOS IPHONEOS_DEPLOYMENT_TARGET=16.0
+        ISH_JIT_BUILD=enabled ISH_VIRTGPU=enabled CURRENT_PROJECT_VERSION="$BUILD_NUMBER")
+
+if [ -n "${ASC_KEY_ID:-}" ] && [ -n "${ASC_ISSUER_ID:-}" ] && [ -n "${ASC_KEY_P8:-}" ] && [ -n "${APPLE_TEAM_ID:-}" ]; then
+    say "App (Release, signed for development with your team)"
+    KEY=$WORK/AuthKey.p8
+    (umask 077 && printf '%s\n' "$ASC_KEY_P8" > "$KEY")
+    trap 'rm -f "$KEY"' EXIT
+    AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY"
+          -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+    ARCHIVE=$WORK/LinPad-Duo.xcarchive
+    archive() {
+        rm -rf "$ARCHIVE"
+        # The Linux system goes in through the "Download Root" build phase, before signing.
+        xcodebuild archive "${COMMON[@]}" -archivePath "$ARCHIVE" SYMROOT="$WORK/products" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY="Apple Development" \
+            CODE_SIGN_ENTITLEMENTS="$1" LINPAD_ROOTFS="$ROOTFS" "${AUTH[@]}"
+    }
+    ENTITLEMENTS=${DUO_ENTITLEMENTS:-app/iSH-MoreMemory.entitlements}
+    if ! archive "$ENTITLEMENTS"; then
+        [ "$ENTITLEMENTS" != app/iSH.entitlements ] || exit 1
+        echo "Signing with $ENTITLEMENTS failed; trying again without the extra-memory entitlement." >&2
+        archive app/iSH.entitlements
+    fi
+    cat > "$WORK/export.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>method</key><string>debugging</string>
+	<key>teamID</key><string>$APPLE_TEAM_ID</string>
+	<key>signingStyle</key><string>automatic</string>
+	<key>thinning</key><string>&lt;none&gt;</string>
+</dict>
+</plist>
+PLIST
+    rm -rf "$WORK/export"
+    xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportOptionsPlist "$WORK/export.plist" \
+        -exportPath "$WORK/export" "${AUTH[@]}"
+    rm -f "$OUT"
+    mv "$WORK/export/"*.ipa "$OUT"
+
+    say "Install page"
+    SITE=$WORK/site
+    rm -rf "$SITE" && mkdir -p "$SITE"
+    IPA_URL=${IPA_URL:-https://example.invalid/LinPad-Duo.ipa}
+    sed -e "s|@IPA_URL@|$IPA_URL|" -e "s|@BUNDLE_ID@|$BUNDLE_ID|" -e "s|@VERSION@|$VERSION|" \
+        release/duo-install/manifest.plist > "$SITE/manifest.plist"
+    sed -e "s|@VERSION@|$VERSION ($BUILD_NUMBER)|" -e "s|@COMMIT@|$(git rev-parse --short HEAD)|" \
+        release/duo-install/index.html > "$SITE/index.html"
+    ls -lh "$OUT"
+    exit 0
+fi
+
+say "App (unsigned Release build, native JIT, virtgpu)"
+xcodebuild "${COMMON[@]}" SYMROOT="$WORK/products" \
     CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= DEVELOPMENT_TEAM= build
 APP="$WORK/products/Release-iphoneos/iSH ARM64.app"
 [ -d "$APP" ] || { echo "no app at $APP" >&2; exit 1; }

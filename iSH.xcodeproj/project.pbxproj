@@ -2095,7 +2095,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "curl -L \"https://$ROOTFS_URL\" -o \"$BUILT_PRODUCTS_DIR/$CONTENTS_FOLDER_PATH/root.tar.gz\"\n";
+			shellScript = "# LINPAD_ROOTFS (a build setting): a local Linux system to put in the app before it is signed,\n# with its version stamp next to it as NAME.version (release/duo-build-ipa.sh).\ndest=\"$BUILT_PRODUCTS_DIR/$CONTENTS_FOLDER_PATH\"\nif [ -n \"$LINPAD_ROOTFS\" ]; then\n    cp \"$LINPAD_ROOTFS\" \"$dest/root.tar.gz\" || exit 1\n    version=\"${LINPAD_ROOTFS%.tar.gz}.version\"\n    if [ -f \"$version\" ]; then cp \"$version\" \"$dest/root.version\"; fi\nelse\n    curl -L \"https://$ROOTFS_URL\" -o \"$dest/root.tar.gz\"\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 		AA000012AF96D90D00FFB7A4 /* Generate APK Repositories File */ = {

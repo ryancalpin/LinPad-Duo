@@ -1,8 +1,12 @@
 name: LinPad Duo IPA
 
 # Builds LinPad Duo on GitHub's Apple-silicon Macs (free for public repositories), so no
-# Mac of your own has to run Xcode. The IPA is under the run's Artifacts; install it with
-# Sideloadly, AltStore, SideStore or iloader (DUO-SETUP.md, "Building in the cloud").
+# Mac of your own has to run Xcode (DUO-SETUP.md, "Building in the cloud").
+#
+# With the repository secrets ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 and APPLE_TEAM_ID (a paid
+# Apple Developer account), the IPA is signed for your registered devices, published as the
+# release "duo-latest", and installed from https://ryancalpin.github.io/LinPad-Duo/ in
+# Safari on the phone. Without them it is ad-hoc signed, for Sideloadly and friends.
 on:
   push:
     branches: [duo]
@@ -61,6 +65,12 @@ jobs:
           key: linpad-rootfs-1.5.0
 
       - name: Build the IPA
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          IPA_URL: https://github.com/${{ github.repository }}/releases/download/duo-latest/LinPad-Duo.ipa
         run: |
           set -o pipefail
           release/duo-build-ipa.sh 2>&1 | tee "$RUNNER_TEMP/build.log"
@@ -82,3 +92,47 @@ jobs:
           name: build-log
           path: ${{ runner.temp }}/build.log
           retention-days: 7
+
+      - name: Was it signed?
+        id: signed
+        run: |
+          if [ -f build-duo/site/manifest.plist ]; then echo "signed=true" >> "$GITHUB_OUTPUT"; else echo "signed=false" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.signed.outputs.signed == 'true'
+        with:
+          path: build-duo/site
+
+    outputs:
+      signed: ${{ steps.signed.outputs.signed }}
+
+  # The signed IPA replaces the release "duo-latest"; the install page points at it.
+  publish:
+    name: Publish the signed IPA
+    needs: ipa
+    if: needs.ipa.outputs.signed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: LinPad-Duo-ipa
+
+      - name: Replace the duo-latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release delete duo-latest --yes --cleanup-tag || true
+          gh release create duo-latest LinPad-Duo.ipa --prerelease --target "$GITHUB_SHA" \
+            --title "LinPad Duo (latest build)" \
+            --notes "Built from ${GITHUB_SHA::7}. On the iPhone, open https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/ in Safari and tap Install."
+
+      - id: pages
+        uses: actions/deploy-pages@v4

@@ -106,6 +106,57 @@ What's different about a cloud build:
   the newest Xcode by itself.
 - `codemagic.yaml` does the same on Codemagic, if you ever prefer it.
 
+## 4c. Signed builds that install from Safari (paid Apple Developer account)
+
+Once these are set up, every cloud build is signed for your phone. You open
+**https://ryancalpin.github.io/LinPad-Duo/** in Safari on the phone and tap Install: no Mac,
+no cable, no Sideloadly, and the app keeps working for a year.
+
+**A. Register the phone** (once per phone)
+1. Plug the phone into the Mac and select it in a Finder window's sidebar.
+2. Under its name, click the grey line of text until it shows **UDID**. Right-click it ›
+   **Copy UDID**.
+3. developer.apple.com › Account › **Certificates, Identifiers & Profiles** › **Devices** › **+**.
+   Name it "iPhone Duo", paste the UDID, Continue, Register.
+
+**B. Find your Team ID**: developer.apple.com › Account › **Membership details** › Team ID
+(10 letters and numbers).
+
+**C. Make an API key** (lets the cloud build sign apps for you)
+1. appstoreconnect.apple.com › **Users and Access** › **Integrations** › **App Store Connect API**.
+   If it asks, click **Request Access** first.
+2. **Team Keys** › **+**. Name: `LinPad Duo builds`. Access: **Admin** (needed so it can make
+   signing certificates). Generate.
+3. Note the **Issuer ID** (above the list) and the key's **Key ID**. Click **Download API Key**:
+   you get a `.p8` file, and Apple only lets you download it once.
+
+**D. Give them to GitHub** (stored encrypted; never in the code)
+github.com/ryancalpin/LinPad-Duo › **Settings** › **Secrets and variables** › **Actions** ›
+**New repository secret**, four times:
+
+| Name | Value |
+|---|---|
+| `ASC_KEY_ID` | the Key ID |
+| `ASC_ISSUER_ID` | the Issuer ID |
+| `ASC_KEY_P8` | open the `.p8` file in TextEdit and paste all of it, including the BEGIN and END lines |
+| `APPLE_TEAM_ID` | your Team ID |
+
+**E. Two GitHub settings**
+1. **Settings › Pages** › Build and deployment › Source: **GitHub Actions**.
+2. **Settings › General** › Default branch: switch it to **duo** (the install page can only be
+   published from the default branch; `main` is just the untouched copy of stock LinPad).
+
+**F. Build**: **Actions** › **LinPad Duo IPA** › **Run workflow** (or ask Claude Code to start
+it). When it's green, open the install page on the phone in Safari.
+
+Good to know:
+- A phone registered after a build needs a new build before it can install.
+- The key can manage your account's signing certificates, so treat it like a password: it
+  only works from workflows in your repository, don't give anyone else write access to the
+  repository, and you can revoke it in App Store Connect at any time.
+- Builds are signed for development, which keeps fast mode possible (StikDebug needs it).
+  With a paid account they also get the extra-memory entitlement.
+
 ## 5. Fast mode (optional, makes Linux several times faster)
 
 Fast mode needs **StikDebug** and **LocalDevVPN** from the App Store, plus a "pairing file"
