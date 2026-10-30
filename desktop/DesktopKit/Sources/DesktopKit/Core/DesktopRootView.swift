@@ -40,6 +40,11 @@ public struct DesktopRootView: View {
         _controller = State(initialValue: DesktopController(host: host, apps: apps, systemControls: systemControls))
     }
 
+    /// Tests: a desktop around a controller they keep a handle on.
+    init(controller: DesktopController) {
+        _controller = State(initialValue: controller)
+    }
+
     public var body: some View {
         WithPerceptionTracking { root }
             .modifier(AppScenePhase())
@@ -61,6 +66,8 @@ public struct DesktopRootView: View {
 
             DuoLaptopLayout(controller: controller, isActive: showsLaptopDeck,
                             showsKeyboard: !controller.keyboard.isConnected) { shell }
+                // Above the panel and the desktop, so the trackpad pointer can reach both.
+                .overlay { DuoPointerOverlay(pointer: controller.duoPointer) }
                 .overlay {
                     if controller.isOnboardingPresented {
                         OnboardingView(controller: controller)
@@ -377,7 +384,6 @@ public struct DesktopRootView: View {
                         LinuxPopupLayerHost(bridge: linux)
                     }
                     DuoPoseChrome(controller: controller)
-                    DuoPointerOverlay(pointer: controller.duoPointer)
                 }
                 .coordinateSpace(name: DesktopCoordinateSpace.name)
                 .onAppear {

@@ -17,8 +17,10 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-perception", from: "2.0.12"),
     ],
     targets: [
-        .target(name: "DesktopKit", dependencies: [.product(name: "Perception", package: "swift-perception")], resources: [.copy("Resources/Wallpapers"), .copy("Resources/ColorThemes"), .copy("Resources/Fonts"), .copy("Resources/Icons"), .copy("Resources/Store")],
+        // Real touches for the Duo trackpad (private UIKit/IOKit SPI; see its header).
+        .target(name: "DesktopTouchSynth"),
+        .target(name: "DesktopKit", dependencies: ["DesktopTouchSynth", .product(name: "Perception", package: "swift-perception")], resources: [.copy("Resources/Wallpapers"), .copy("Resources/ColorThemes"), .copy("Resources/Fonts"), .copy("Resources/Icons"), .copy("Resources/Store")],
                 swiftSettings: hingeAPI ? [.define("LINPAD_HINGE_API")] : []),
-        .testTarget(name: "DesktopKitTests", dependencies: ["DesktopKit"], exclude: ["Fixtures"]),
+        .testTarget(name: "DesktopKitTests", dependencies: ["DesktopKit", "DesktopTouchSynth"], exclude: ["Fixtures"]),
     ]
 )
