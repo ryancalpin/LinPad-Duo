@@ -158,6 +158,10 @@ final class OnScreenKeyboard {
 
     /// Panel button: brings the keyboard up for the focused Linux window, or puts it away.
     func toggle(for controller: DesktopController) {
+        if togglesDeckKeys(for: controller) {
+            controller.duoTypingFocus.toggleKeyboard()
+            return
+        }
         guard let surface = Self.focusedSurface(in: controller) else { return }
         if isVisible {
             isRequested = false
@@ -172,6 +176,13 @@ final class OnScreenKeyboard {
         } else {
             surface.becomeFirstResponder()
         }
+    }
+
+    /// In laptop pose the Adaptive deck is the keyboard and surfaces can't take first
+    /// responder, so the panel button opens and closes the deck's keys instead.
+    func togglesDeckKeys(for controller: DesktopController) -> Bool {
+        isLaptopDeckShown && !HardwareKeyboardMonitor.isAttached && !controller.keyboard.isConnected
+            && DuoDeckStyle.stored == .adaptive
     }
 
     /// The focused window's Linux surface, found in the view hierarchy.

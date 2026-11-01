@@ -308,21 +308,34 @@ final class DuoKeyboardModel {
     /// the desktop's fields. Nothing in a terminal, where Ctrl+Z suspends the running program.
     private func undoOrRedo(redo: Bool) {
         guard let controller else { return }
-        if let appID = controller.windowManager.focusedWindow?.appID, Self.isTerminal(appID: appID) { return }
-        if let surface = linuxTarget, let bridge = controller.linux {
-            // The exact chord, whatever modifiers are latched or locked on the deck.
-            let z = code(of: "z", us: 44)
-            let chord: [UInt32] = redo ? [29, 42, z] : [29, z]
-            for code in chord { bridge.key(code, pressed: true, focusedSurface: surface) }
-            for code in chord.reversed() { bridge.key(code, pressed: false, focusedSurface: surface) }
-        } else if let manager = UIResponder.desktopCurrentFirstResponder?.undoManager {
-            if redo { manager.redo() } else { manager.undo() }
+        // A desktop field being edited first, as for the keys (the launcher's search over a
+        // terminal), and only its own undo: the window's shared one may belong to another app.
+        let responder = UIResponder.desktopCurrentFirstResponder
+        if responder is UITextField || responder is UITextView {
+            if let manager = responder?.undoManager {
+                if redo { manager.redo() } else { manager.undo() }
+            }
+            return
         }
+        if let appID = controller.windowManager.focusedWindow?.appID, controller.isTerminal(appID: appID) { return }
+        guard let surface = linuxTarget, let bridge = controller.linux else { return }
+        // The exact chord, whatever modifiers are latched or locked on the deck.
+        let z = code(of: "z", us: 44)
+        let chord: [UInt32] = redo ? [29, 42, z] : [29, z]
+        for code in chord { bridge.key(code, pressed: true, focusedSurface: surface) }
+        for code in chord.reversed() { bridge.key(code, pressed: false, focusedSurface: surface) }
     }
 
     /// The built-in Terminal app, or foot in the Linux session (`footclient` when run by hand).
+    /// DesktopController.isTerminal(appID:) also knows guest apps that run in ish-terminal.
     nonisolated static func isTerminal(appID: String) -> Bool {
         appID == AppID.terminal || appID == LinuxAppID.prefix + "foot" || appID == LinuxAppID.prefix + "footclient"
+    }
+
+    /// A .desktop Exec that runs its program in the desktop's terminal under its own app id
+    /// (`ish-terminal --app-id=linpad-scan … linpad-scan`).
+    nonisolated static func runsInTerminal(command: String) -> Bool {
+        command.split(separator: " ").first?.split(separator: "/").last == "ish-terminal"
     }
 
     /// Where a shortcut's letter is in the Linux keymap (Ctrl+Z is on the US W key on
@@ -544,6 +557,17 @@ extension DesktopController {
         if firstResponder is UITextField || firstResponder is UITextView { return nil }
         guard let focused = windowManager.focusedWindowID else { return nil }
         return linuxWindows.first { $0.value == focused }?.key
+    }
+
+    /// A terminal, for Undo (Ctrl+Z there suspends the running program): the app id check, or
+    /// a guest app whose .desktop entry runs it in ish-terminal (`linux:linpad-scan`), where no
+    /// shell would bring it back.
+    func isTerminal(appID: String) -> Bool {
+        if DuoKeyboardModel.isTerminal(appID: appID) { return true }
+        guard appID.hasPrefix(LinuxAppID.prefix), let linux else { return false }
+        let id = String(appID.dropFirst(LinuxAppID.prefix.count))
+        guard let entry = linux.applications.first(where: { $0.id == id }) else { return false }
+        return DuoKeyboardModel.runsInTerminal(command: entry.command)
     }
 
     /// Where the deck and dictation type outside Linux windows: the first responder, or the

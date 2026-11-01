@@ -106,6 +106,11 @@ enum DuoDeckStyle: String, CaseIterable, Identifiable {
 
     static let storageKey = "duo.deck.style"
 
+    /// The saved choice, Adaptive when there is none (as the deck's @AppStorage reads it).
+    static var stored: DuoDeckStyle {
+        UserDefaults.standard.string(forKey: storageKey).flatMap(DuoDeckStyle.init(rawValue:)) ?? .adaptive
+    }
+
     var id: String { rawValue }
 
     var title: String {

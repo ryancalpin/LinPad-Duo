@@ -45,4 +45,30 @@ final class DuoDeckRoutingTests: XCTestCase {
         controller.duoKeyboard.release(esc)
         XCTAssertFalse(controller.isLauncherPresented, "the keyboard's esc key")
     }
+
+    /// In laptop pose the panel's keyboard button opens and closes the Adaptive deck's keys.
+    func testPanelKeyboardButtonWorksTheAdaptiveDeck() throws {
+        let controller = makeController()
+        try XCTSkipIf(HardwareKeyboardMonitor.isAttached || controller.keyboard.isConnected,
+                      "the simulator reports a hardware keyboard")
+        let keyboard = OnScreenKeyboard.shared
+        let defaults = UserDefaults.standard
+        let savedStyle = defaults.string(forKey: DuoDeckStyle.storageKey)
+        defer {
+            keyboard.setLaptopDeckShown(false)
+            defaults.set(savedStyle, forKey: DuoDeckStyle.storageKey)
+        }
+        defaults.removeObject(forKey: DuoDeckStyle.storageKey)
+        XCTAssertFalse(keyboard.togglesDeckKeys(for: controller), "no deck")
+
+        keyboard.setLaptopDeckShown(true)
+        XCTAssertTrue(keyboard.togglesDeckKeys(for: controller), "no saved style means Adaptive")
+        keyboard.toggle(for: controller)
+        XCTAssertTrue(controller.duoTypingFocus.showsKeyboard)
+        keyboard.toggle(for: controller)
+        XCTAssertFalse(controller.duoTypingFocus.showsKeyboard)
+
+        defaults.set(DuoDeckStyle.classic.rawValue, forKey: DuoDeckStyle.storageKey)
+        XCTAssertFalse(keyboard.togglesDeckKeys(for: controller), "Classic")
+    }
 }

@@ -179,7 +179,7 @@ struct DuoAdaptiveDeck: View {
             // Over the pad, so the mic and its "Slide to cancel" stay visible as they slide.
             .zIndex(1)
             trackpad(showsHint: !compact)
-                .frame(maxWidth: compact ? width * 0.6 : .infinity)
+                .frame(maxWidth: compact ? max(width, 0) * 0.6 : .infinity)
             column {
                 ForEach(Array(fit.right.enumerated()), id: \.offset) { _, action in sideButton(action) }
                 moreMenu(overflow: fit.overflow)

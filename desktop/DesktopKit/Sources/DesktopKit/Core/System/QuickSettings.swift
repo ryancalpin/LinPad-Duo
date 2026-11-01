@@ -64,16 +64,19 @@ struct SystemTrayButtons: View {
                 }
                 if controller.showsKeyboardButton {
                     let keyboard = OnScreenKeyboard.shared
+                    // In laptop pose: the Adaptive deck's keys.
+                    let shown = keyboard.togglesDeckKeys(for: controller)
+                        ? controller.duoTypingFocus.showsKeyboard : keyboard.isVisible
                     Button { keyboard.toggle(for: controller) } label: {
-                        ThemeGlyph(symbol: keyboard.isVisible ? "keyboard.chevron.compact.down" : "keyboard", size: 12)
+                        ThemeGlyph(symbol: shown ? "keyboard.chevron.compact.down" : "keyboard", size: 12)
                             .font(.system(size: 12, weight: .semibold))
                             .frame(width: 32, height: 28)
-                            .background(PanelItemBackground(isActive: keyboard.isVisible))
+                            .background(PanelItemBackground(isActive: shown))
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .hoverEffect(.highlight)
-                    .accessibilityLabel(keyboard.isVisible ? "Hide Keyboard" : "Show Keyboard")
+                    .accessibilityLabel(shown ? "Hide Keyboard" : "Show Keyboard")
                     .accessibilityIdentifier("desktop.panel.keyboard")
                 }
                 Button { controller.toggleQuickSettings() } label: {
