@@ -208,7 +208,7 @@ struct DuoDeckSettingsSection: View {
     var body: some View {
         WithPerceptionTracking {
             SettingsSection(title: "Laptop Keyboard", symbol: "keyboard") {
-                Text("The on-screen keyboard in laptop pose, and on the phone while the desktop is on a monitor. Touch and hold a bottom-bar button on the keyboard to come here.")
+                Text("The on-screen keyboard in laptop pose, and on the phone while the desktop is on a monitor. Touch and hold one of its custom buttons to come here.")
                     .font(.caption)
                     .foregroundStyle(theme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)

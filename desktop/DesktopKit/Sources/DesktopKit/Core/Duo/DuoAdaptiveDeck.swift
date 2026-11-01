@@ -76,8 +76,11 @@ struct DuoAdaptiveDeck: View {
                     let padHeight = keysShown ? min(max(available * 0.38, Self.minimumPad), available) : available
                     let keyboardHeight = max(available - padHeight - spacing, 0)
                     VStack(spacing: spacing) {
+                        // Above the keys, so they slide out from under it rather than over it.
                         shortcutRow(keysShown: keysShown)
                             .frame(height: Self.rowHeight)
+                            .background(DuoDeckColors.background)
+                            .zIndex(1)
                         if keysShown {
                             DuoKeyboardView(model: controller.duoKeyboard)
                                 .frame(height: keyboardHeight)
@@ -89,7 +92,8 @@ struct DuoAdaptiveDeck: View {
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
-                    .animation(reduceMotion ? nil : DesktopMotion.standard, value: keysShown)
+                    // Reduce Motion: a quick cross-fade (as WindowView does) instead of the slide.
+                    .animation(reduceMotion ? .easeInOut(duration: 0.12) : DesktopMotion.standard, value: keysShown)
                 }
             }
             .onChangeCompat(of: controller.duoTypingSignal, initial: true) { _, signal in
