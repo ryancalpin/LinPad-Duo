@@ -85,7 +85,7 @@ final class LinuxGUIBridge {
     @PerceptionIgnored weak var delegate: LinuxGUIBridgeDelegate?
     @PerceptionIgnored private let host: any LinuxGraphicsHost
     @PerceptionIgnored private var surfaces: [UInt32: LinuxSurface] = [:]
-    @PerceptionIgnored private var textInputSurfaceID: UInt32?
+    private(set) var textInputSurfaceID: UInt32?
     #if DEBUG || DESKTOP_AUTOMATION
     @PerceptionIgnored private var textInputProbe: LinuxTextInputProbe?
     #endif

@@ -94,6 +94,8 @@ final class DesktopController {
     /// The on-screen trackpad's pointer and keyboard (laptop pose, monitor mode).
     let duoPointer = DuoVirtualPointer()
     let duoKeyboard = DuoKeyboardModel()
+    /// Whether the Adaptive deck shows its keyboard (typing in a field, terminal or Linux text box).
+    let duoTypingFocus = DuoTypingFocus()
     /// The deck's microphone button: speech typed into the focused window.
     let duoDictation = DuoDictation()
     /// Settings › Safety and Battery: the heat guard and the Face ID lock.

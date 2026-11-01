@@ -52,6 +52,8 @@ final class OnScreenKeyboard {
     /// Laptop pose's deck is up. It is the keyboard then, and iOS's stays down; everywhere
     /// else iOS's keyboard works as usual.
     private(set) var isLaptopDeckShown = false
+    /// The desktop text field or view being edited, for the Adaptive deck.
+    private(set) var editingField: ObjectIdentifier?
 
     /// The deck stands in for iOS's keyboard: Linux windows and the terminal don't take
     /// first responder (the deck types into them directly), and the built-in apps' text
@@ -86,7 +88,9 @@ final class OnScreenKeyboard {
             center.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
                 let responder = note.object as? UIResponder
                 MainActor.assumeIsolated {
-                    guard let self, self.suppressesSystemKeyboard, let responder else { return }
+                    guard let self, let responder else { return }
+                    self.editingField = ObjectIdentifier(responder)
+                    guard self.suppressesSystemKeyboard else { return }
                     self.setPlaceholder(true, on: responder)
                 }
             }
@@ -96,6 +100,7 @@ final class OnScreenKeyboard {
                 let responder = note.object as? UIResponder
                 MainActor.assumeIsolated {
                     guard let self, let responder else { return }
+                    if self.editingField == ObjectIdentifier(responder) { self.editingField = nil }
                     self.setPlaceholder(false, on: responder)
                 }
             }
