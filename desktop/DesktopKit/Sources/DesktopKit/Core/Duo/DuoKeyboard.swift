@@ -289,6 +289,8 @@ final class DuoKeyboardModel {
             } else if let input = controller.deckTextTarget {
                 input.insertText(text)
             }
+        case .undo, .redo:
+            undoOrRedo(redo: action == .redo)
         case .terminal:
             controller.openLinuxApp(LinuxAppID.preferredTerminal)
         case .files:
@@ -298,6 +300,27 @@ final class DuoKeyboardModel {
         case .app(let appID):
             controller.open(appID: appID, arguments: [:])
         }
+    }
+
+    /// Undo and Redo: Ctrl+Z and Ctrl+Shift+Z in a Linux window, the text field's own undo in
+    /// the desktop's fields. Nothing in a terminal, where Ctrl+Z suspends the running program.
+    private func undoOrRedo(redo: Bool) {
+        guard let controller else { return }
+        if let appID = controller.windowManager.focusedWindow?.appID, Self.isTerminal(appID: appID) { return }
+        if linuxTarget != nil {
+            modifiers[.control] = .latched
+            if redo { modifiers[.shift] = .latched }
+            let key = DuoKey.char(44, "z", "Z")
+            press(key)
+            release(key)
+        } else if let manager = UIResponder.desktopCurrentFirstResponder?.undoManager {
+            if redo { manager.redo() } else { manager.undo() }
+        }
+    }
+
+    /// The built-in Terminal app, or foot in the Linux session (`footclient` when run by hand).
+    static func isTerminal(appID: String) -> Bool {
+        appID == AppID.terminal || appID == LinuxAppID.prefix + "foot" || appID == LinuxAppID.prefix + "footclient"
     }
 
     /// Presses and releases one key in the focused Linux window.

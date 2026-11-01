@@ -11,7 +11,7 @@ enum DuoDeckAction: Codable, Hashable, Identifiable {
     // Sound
     case previousTrack, playPause, nextTrack, mute, volumeDown, volumeUp
     // Keys
-    case returnKey, escapeKey, tabKey, interrupt, pasteText
+    case returnKey, escapeKey, tabKey, interrupt, pasteText, undo, redo
     // Apps
     case terminal, files, settings
     /// Any app in the launcher, by its desktop id ("linux:code", "browser").
@@ -29,7 +29,7 @@ enum DuoDeckAction: Codable, Hashable, Identifiable {
         .launcher, .overview, .commandMenu, .dictation, .doNotDisturb, .lockScreen,
         .brightnessDown, .brightnessUp,
         .previousTrack, .playPause, .nextTrack, .mute, .volumeDown, .volumeUp,
-        .returnKey, .escapeKey, .tabKey, .interrupt, .pasteText,
+        .returnKey, .escapeKey, .tabKey, .interrupt, .pasteText, .undo, .redo,
     ]
 
     @MainActor
@@ -55,6 +55,8 @@ enum DuoDeckAction: Codable, Hashable, Identifiable {
         case .tabKey: "Tab"
         case .interrupt: "Stop command (Ctrl-C)"
         case .pasteText: "Type the iPhone's clipboard"
+        case .undo: "Undo"
+        case .redo: "Redo"
         case .terminal: "Terminal"
         case .files: "Files"
         case .settings: "Settings"
@@ -85,6 +87,8 @@ enum DuoDeckAction: Codable, Hashable, Identifiable {
         case .tabKey: "arrow.right.to.line"
         case .interrupt: "stop.circle"
         case .pasteText: "doc.on.clipboard"
+        case .undo: "arrow.uturn.backward"
+        case .redo: "arrow.uturn.forward"
         case .terminal: "apple.terminal"
         case .files: "folder"
         case .settings: "gearshape"
