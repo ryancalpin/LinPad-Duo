@@ -163,11 +163,8 @@ final class DuoKeyboardModel {
         }
     }
 
-    /// The Linux surface that gets the keys: the focused window's, if it is a Linux window.
-    private var linuxTarget: UInt32? {
-        guard let controller, let focused = controller.windowManager.focusedWindowID else { return nil }
-        return controller.linuxWindows.first { $0.value == focused }?.key
-    }
+    /// The Linux surface that gets the keys (DesktopController.deckLinuxTarget).
+    private var linuxTarget: UInt32? { controller?.deckLinuxTarget }
 
     func press(_ key: DuoKey) {
         switch key.kind {
@@ -522,6 +519,20 @@ private struct DuoKeyCap: View {
 }
 
 extension DesktopController {
+    /// The Linux surface the deck and dictation type into: the focused window's, if it is a
+    /// Linux window. Not while a desktop text field or view is first responder (the
+    /// launcher's search over Firefox): it gets the keys, as it gets the deck's keyboard
+    /// (DuoTypingSignal). The live first responder, since the focused window stays the same.
+    var deckLinuxTarget: UInt32? {
+        deckLinuxTarget(firstResponder: UIResponder.desktopCurrentFirstResponder)
+    }
+
+    func deckLinuxTarget(firstResponder: UIResponder?) -> UInt32? {
+        if firstResponder is UITextField || firstResponder is UITextView { return nil }
+        guard let focused = windowManager.focusedWindowID else { return nil }
+        return linuxWindows.first { $0.value == focused }?.key
+    }
+
     /// Where the deck and dictation type outside Linux windows: the first responder, or the
     /// focused window's own text view (the terminal), which doesn't take first responder
     /// while the deck stands in for iOS's keyboard.

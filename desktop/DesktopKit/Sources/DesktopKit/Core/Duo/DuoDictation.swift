@@ -149,8 +149,7 @@ public final class DuoDictation {
 
     private func type(_ text: String) {
         guard let controller else { return }
-        let focused = controller.windowManager.focusedWindowID
-        if controller.linuxWindows.contains(where: { $0.value == focused }), let bridge = controller.linux {
+        if controller.deckLinuxTarget != nil, let bridge = controller.linux {
             bridge.type(text)
         } else if let input = controller.deckTextTarget {
             input.insertText(text)
