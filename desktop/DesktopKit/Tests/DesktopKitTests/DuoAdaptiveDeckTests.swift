@@ -42,7 +42,7 @@ final class DuoAdaptiveDeckTests: XCTestCase {
             throw XCTSkip("set TEST_RUNNER_DECK_SNAPSHOT_DIR to render deck snapshots")
         }
         let controller = DesktopController(host: MockLinuxHost(latency: .zero), apps: BuiltinApps.all())
-        let sizes = [("laptop", CGSize(width: 951, height: 320)), ("narrow", CGSize(width: 466, height: 300)),
+        let sizes = [("laptop", CGSize(width: 669, height: 465)), ("narrow", CGSize(width: 466, height: 300)),
                      ("monitor", CGSize(width: 669, height: 900))]
         for (name, size) in sizes {
             for typing in [false, true] {
