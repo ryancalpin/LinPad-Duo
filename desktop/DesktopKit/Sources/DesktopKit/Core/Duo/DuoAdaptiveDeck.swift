@@ -128,12 +128,13 @@ struct DuoAdaptiveDeck: View {
             shortcut("All Windows", symbol: "rectangle.3.group", showsWords: showsWords) { keyboard.perform(.overview) }
             shortcut("Undo", symbol: "arrow.uturn.backward", showsWords: showsWords) { keyboard.perform(.undo) }
             shortcut("Redo", symbol: "arrow.uturn.forward", showsWords: showsWords) { keyboard.perform(.redo) }
-            if keysShown {
+            if showsKeyboard {
+                // Always there, so the row doesn't reflow under the finger as typing starts;
+                // dimmed while the keys it changes are away.
                 shortcut("fn", symbol: nil, label: "Function keys", isOn: keyboard.functionKeysLocked) {
                     keyboard.functionKeysLocked.toggle()
                 }
-            }
-            if showsKeyboard {
+                .opacity(keysShown ? 1 : 0.55)
                 shortcut(nil, symbol: "keyboard", label: keysShown ? "Hide keyboard" : "Show keyboard", isOn: keysShown) {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     controller.duoTypingFocus.toggleKeyboard()

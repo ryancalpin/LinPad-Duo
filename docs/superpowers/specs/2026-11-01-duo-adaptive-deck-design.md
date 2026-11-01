@@ -88,7 +88,7 @@ The deck wants the keyboard while any of these is true:
 | All Windows | Overview | `.overview` |
 | Undo | Linux window: Ctrl+Z. LinPad text field: its `undoManager`. | Does nothing in the terminal: Ctrl+Z there would suspend the running program |
 | Redo | Linux window: Ctrl+Shift+Z. LinPad text field: `undoManager.redo()`. | Same terminal exception |
-| fn | Locks F1–F12 on the number row | Today's `functionKeysLocked`. Shown only while the keyboard is |
+| fn | Locks F1–F12 on the number row | Today's `functionKeysLocked`. Always in the row (dimmed while the keys are hidden), so the buttons don't shift when typing starts |
 | ⌨︎ | Manual override (above) | Accent-highlighted while the keyboard shows |
 
 ### Side columns and "…"
