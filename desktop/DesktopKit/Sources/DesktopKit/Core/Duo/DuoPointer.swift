@@ -30,6 +30,18 @@ final class DuoVirtualPointer {
     @PerceptionIgnored private var scrollSurface: UInt32?
     /// Tap-then-drag outside Linux windows: a finger held down at the pointer.
     @PerceptionIgnored private var heldTouch: DTSTouch?
+    @PerceptionIgnored private var fling: Fling?
+
+    /// Content still gliding after a two-finger flick.
+    private struct Fling {
+        let link: CADisplayLink
+        var velocity: CGSize
+        var lastTime: CFTimeInterval
+    }
+
+    /// Below this speed (points per second) lifting the fingers just stops the scroll.
+    static let minimumFlingSpeed: CGFloat = 200
+    private static let flingStopSpeed: CGFloat = 20
 
     /// Trackpad speed: a fast swipe moves the pointer further than a slow one.
     static func accelerated(_ delta: CGSize) -> CGSize {
@@ -45,6 +57,7 @@ final class DuoVirtualPointer {
     }
 
     func hide() {
+        stopFling()
         if let held = heldButton { controller?.linux?.pointerButton(held.surface, .zero, button: held.button, pressed: false) }
         heldButton = nil
         heldTouch?.end()
@@ -132,6 +145,55 @@ final class DuoVirtualPointer {
         guard let surface = scrollSurface else { return }
         scrollSurface = nil
         controller?.linux?.pointerAxisStop(surface)
+    }
+
+    /// The fingers lifting at `velocity` (points per second): a flick keeps the content
+    /// gliding and slowing down, as a scroll view does; a slow lift just ends the scroll.
+    /// Linux apps get the glide as more finger scrolling, then the usual stop.
+    func endScroll(velocity: CGSize) {
+        stopFling()
+        guard hypot(velocity.width, velocity.height) >= Self.minimumFlingSpeed else {
+            endScroll()
+            return
+        }
+        let link = CADisplayLink(target: FlingLinkProxy(self), selector: #selector(FlingLinkProxy.tick(_:)))
+        link.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120)
+        link.add(to: .main, forMode: .common)
+        fling = Fling(link: link, velocity: velocity, lastTime: CACurrentMediaTime())
+    }
+
+    /// A finger landing stops a glide, as on a real trackpad. Returns whether one was moving.
+    @discardableResult
+    func stopFling() -> Bool {
+        guard let fling else { return false }
+        fling.link.invalidate()
+        self.fling = nil
+        endScroll()
+        return true
+    }
+
+    /// The glide's speed `elapsed` seconds later, at UIScrollView's normal deceleration.
+    static func decayed(_ velocity: CGSize, after elapsed: CFTimeInterval) -> CGSize {
+        let factor = pow(UIScrollView.DecelerationRate.normal.rawValue, elapsed * 1000)
+        return CGSize(width: velocity.width * factor, height: velocity.height * factor)
+    }
+
+    fileprivate func flingTick(_ link: CADisplayLink) {
+        guard var current = fling else {
+            link.invalidate()
+            return
+        }
+        let now = link.timestamp
+        // A late frame mustn't jump the content.
+        let elapsed = min(max(now - current.lastTime, 0), 1.0 / 30)
+        current.lastTime = now
+        current.velocity = Self.decayed(current.velocity, after: elapsed)
+        guard hypot(current.velocity.width, current.velocity.height) >= Self.flingStopSpeed else {
+            stopFling()
+            return
+        }
+        fling = current
+        scroll(by: CGSize(width: current.velocity.width * elapsed, height: current.velocity.height * elapsed))
     }
 
     /// Outside Linux windows: the nearest scroll view under the pointer that can move that
@@ -328,8 +390,25 @@ struct DuoPointerOverlay: View {
     }
 }
 
+/// CADisplayLink retains its target; the proxy keeps that from retaining the pointer.
+private final class FlingLinkProxy: NSObject {
+    private weak var pointer: DuoVirtualPointer?
+
+    init(_ pointer: DuoVirtualPointer) {
+        self.pointer = pointer
+    }
+
+    @objc func tick(_ link: CADisplayLink) {
+        MainActor.assumeIsolated {
+            guard let pointer else { return link.invalidate() }
+            pointer.flingTick(link)
+        }
+    }
+}
+
 /// One-finger moves the pointer, a tap clicks, a two-finger tap right-clicks, two fingers
-/// scroll, and tap-then-drag holds the button (selecting text, dragging windows' contents).
+/// scroll (a flick keeps gliding), and tap-then-drag holds the button (selecting text,
+/// dragging windows' contents). Touching the pad stops a glide without clicking.
 struct DuoTrackpad: UIViewRepresentable {
     let pointer: DuoVirtualPointer
 
@@ -360,6 +439,12 @@ struct DuoTrackpad: UIViewRepresentable {
         private var mayDrag = false
         private var pendingMove = CGSize.zero
         private var isScrolling = false
+        /// Recent two-finger movement, for the speed of a flick.
+        private var scrollSamples: [(time: TimeInterval, delta: CGSize)] = []
+        /// Measured when the first finger lifts: the second often lifts a moment later.
+        private var flingVelocity: CGSize?
+        /// This touch stopped a glide, so it isn't also a click.
+        private var stoppedFling = false
 
         init(pointer: DuoVirtualPointer) {
             self.pointer = pointer
@@ -388,6 +473,7 @@ struct DuoTrackpad: UIViewRepresentable {
             lastCentroid = centroid
             mostTouches = max(mostTouches, active.count)
             guard wasIdle else { return }
+            stoppedFling = pointer.stopFling()
             began = Date()
             travelled = 0
             mostTouches = active.count
@@ -411,6 +497,9 @@ struct DuoTrackpad: UIViewRepresentable {
             }
             if active.count >= 2 && !isDragging {
                 isScrolling = true
+                let time = event?.timestamp ?? ProcessInfo.processInfo.systemUptime
+                scrollSamples.removeAll { $0.time < time - Self.flingWindow }
+                scrollSamples.append((time, delta))
                 pointer.scroll(by: delta)
             } else if active.count == 1 && !isScrolling {
                 pointer.move(by: delta)
@@ -418,23 +507,27 @@ struct DuoTrackpad: UIViewRepresentable {
         }
 
         override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-            finish(touches, cancelled: false)
+            finish(touches, event: event, cancelled: false)
         }
 
         override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-            finish(touches, cancelled: true)
+            finish(touches, event: event, cancelled: true)
         }
 
-        private func finish(_ touches: Set<UITouch>, cancelled: Bool) {
+        private func finish(_ touches: Set<UITouch>, event: UIEvent?, cancelled: Bool) {
             active.subtract(touches)
             lastCentroid = centroid
+            if isScrolling && flingVelocity == nil && active.count < 2 {
+                let time = event?.timestamp ?? ProcessInfo.processInfo.systemUptime
+                flingVelocity = cancelled ? .zero : Self.flingVelocity(scrollSamples, at: time)
+            }
             guard active.isEmpty else { return }
             let wasTap = !cancelled && Date().timeIntervalSince(began) < Self.tapTime && travelled < Self.tapSlop
             if isDragging {
                 pointer.endDrag()
             } else if isScrolling {
-                pointer.endScroll()
-            } else if wasTap {
+                pointer.endScroll(velocity: flingVelocity ?? .zero)
+            } else if wasTap && !stoppedFling {
                 pointer.click(right: mostTouches >= 2)
                 // A second tap completes a double-click; a third starts over.
                 lastTap = mostTouches == 1 && !mayDrag ? Date() : .distantPast
@@ -443,6 +536,25 @@ struct DuoTrackpad: UIViewRepresentable {
             mayDrag = false
             isScrolling = false
             mostTouches = 0
+            scrollSamples.removeAll()
+            flingVelocity = nil
+            stoppedFling = false
+        }
+
+        static let flingWindow: TimeInterval = 0.1
+
+        /// The fingers' speed (points per second) over their last moment of movement before
+        /// lifting at `time`; zero if they had already stopped.
+        static func flingVelocity(_ samples: [(time: TimeInterval, delta: CGSize)], at time: TimeInterval) -> CGSize {
+            let recent = samples.filter { $0.time >= time - flingWindow }
+            guard recent.count >= 2, let first = recent.first, let last = recent.last,
+                  time - last.time < flingWindow / 2, last.time > first.time else { return .zero }
+            // Each sample's movement happened before its time, so the first one's is outside.
+            let moved = recent.dropFirst().reduce(CGSize.zero) {
+                CGSize(width: $0.width + $1.delta.width, height: $0.height + $1.delta.height)
+            }
+            let span = last.time - first.time
+            return CGSize(width: moved.width / span, height: moved.height / span)
         }
     }
 }
