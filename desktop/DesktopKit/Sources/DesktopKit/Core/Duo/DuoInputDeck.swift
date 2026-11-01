@@ -194,11 +194,16 @@ struct DuoInputDeck: View {
 
 /// The deck's microphone. Tap mode: tap to start, tap again to type what was heard. Hold
 /// mode: hold and speak, let go to type it; slide up to lock it on (then tap to finish),
-/// slide left to cancel.
+/// slide sideways to cancel.
 struct DuoMicButton: View {
+    enum CancelDirection { case left, right }
+
     let dictation: DuoDictation
     let mode: DuoDeckLayout.MicMode
     let size: CGFloat
+    /// Left in Classic's bottom bar; right from the Adaptive deck's left column, which has
+    /// no room to its left.
+    var cancelDirection = CancelDirection.left
     static let lockDistance: CGFloat = 60
     static let cancelDistance: CGFloat = 80
 
@@ -210,9 +215,10 @@ struct DuoMicButton: View {
         WithPerceptionTracking {
             let listening = dictation.isListening
             let holding = touch == .holding
+            let cancelsRight = cancelDirection == .right
             ZStack {
                 if holding {
-                    // Where to slide: up to lock, left to cancel.
+                    // Where to slide: up to lock, sideways to cancel.
                     VStack(spacing: 4) {
                         Image(systemName: offset.height < -Self.lockDistance * 0.6 ? "lock.fill" : "lock.open")
                         Image(systemName: "chevron.up").font(.system(size: 10, weight: .bold))
@@ -224,12 +230,21 @@ struct DuoMicButton: View {
                     .background(Capsule().fill(DuoDeckColors.key))
                     .offset(y: -size * 1.15)
                     .transition(.opacity)
-                    Label("Slide to cancel", systemImage: "chevron.left")
-                        .font(.caption)
-                        .foregroundStyle(DuoDeckColors.secondary)
-                        .fixedSize()
-                        .offset(x: -size * 1.6)
-                        .transition(.opacity)
+                    Group {
+                        if cancelsRight {
+                            HStack(spacing: 4) {
+                                Text("Slide to cancel")
+                                Image(systemName: "chevron.right")
+                            }
+                        } else {
+                            Label("Slide to cancel", systemImage: "chevron.left")
+                        }
+                    }
+                    .font(.caption)
+                    .foregroundStyle(DuoDeckColors.secondary)
+                    .fixedSize()
+                    .offset(x: (cancelsRight ? 1 : -1) * size * 1.6)
+                    .transition(.opacity)
                 }
                 Image(systemName: dictation.isLocked ? "lock.fill" : listening ? "waveform" : "mic.fill")
                     .font(.system(size: size * 0.38, weight: .semibold))
@@ -238,7 +253,8 @@ struct DuoMicButton: View {
                     .background(Circle().fill(listening ? Color.red : DuoDeckColors.accent))
                     .shadow(color: (listening ? Color.red : DuoDeckColors.accent).opacity(0.5), radius: 8)
                     .scaleEffect(holding ? 1.15 : 1)
-                    .offset(x: holding ? min(offset.width, 0) : 0, y: holding ? min(offset.height, 0) : 0)
+                    .offset(x: holding ? (cancelsRight ? max(offset.width, 0) : min(offset.width, 0)) : 0,
+                            y: holding ? min(offset.height, 0) : 0)
                     .gesture(DragGesture(minimumDistance: 0).onChanged(changed).onEnded { _ in ended() })
             }
             .animation(DesktopMotion.quick, value: holding)
@@ -273,7 +289,7 @@ struct DuoMicButton: View {
                 offset = .zero
                 dictation.isLocked = true
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
-            } else if value.translation.width < -Self.cancelDistance {
+            } else if (cancelDirection == .right ? value.translation.width : -value.translation.width) > Self.cancelDistance {
                 touch = .done
                 offset = .zero
                 dictation.cancel()

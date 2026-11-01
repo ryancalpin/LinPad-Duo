@@ -170,9 +170,13 @@ struct DuoAdaptiveDeck: View {
         let fit = DuoAdaptiveColumns.fit(left: layout.leftButtons, right: layout.rightButtons, height: height)
         return HStack(spacing: 10) {
             column {
-                DuoMicButton(dictation: controller.duoDictation, mode: layout.micMode, size: DuoAdaptiveColumns.button)
+                // The mic sits at the deck's left edge: it slides right, over the pad, to cancel.
+                DuoMicButton(dictation: controller.duoDictation, mode: layout.micMode, size: DuoAdaptiveColumns.button,
+                             cancelDirection: .right)
                 ForEach(Array(fit.left.enumerated()), id: \.offset) { _, action in sideButton(action) }
             }
+            // Over the pad, so the mic and its "Slide to cancel" stay visible as they slide.
+            .zIndex(1)
             trackpad(showsHint: !compact)
                 .frame(maxWidth: compact ? width * 0.6 : .infinity)
             column {
