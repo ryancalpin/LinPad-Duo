@@ -434,9 +434,12 @@ private struct DuoKeyCap: View {
     var body: some View {
         WithPerceptionTracking {
             GeometryReader { proxy in
-                let size = min(proxy.size.height, proxy.size.width * 1.2)
-                content(size: size)
-                    .frame(width: proxy.size.width, height: proxy.size.height)
+                // The closure runs outside the body's tracking, and `content` reads the model.
+                WithPerceptionTracking {
+                    let size = min(proxy.size.height, proxy.size.width * 1.2)
+                    content(size: size)
+                        .frame(width: proxy.size.width, height: proxy.size.height)
+                }
             }
             .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
                 .fill(isDown ? DuoDeckColors.keyPressed : DuoDeckColors.key))

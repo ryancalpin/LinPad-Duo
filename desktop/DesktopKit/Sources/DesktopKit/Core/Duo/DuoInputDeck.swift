@@ -4,46 +4,64 @@ import SwiftUI
 /// A MacBook-style keyboard and a trackpad drawn on the screen (plan Phase 4): the bottom
 /// half in laptop pose, and the whole phone while a monitor shows the desktop (Phase 9).
 ///
-/// Top strip: the Linux keyboard layout and the F1–F12 switch. Then the keyboard, or the
-/// trackpad in its place. Bottom bar: the keyboard/trackpad switch and quick apps on the
-/// left, dictation in the middle, Return and the Command Menu on the right. With a hardware
-/// keyboard only the trackpad shows; with a mouse too, LinPad hides the deck altogether.
+/// Two layouts (Settings › Laptop Keyboard › Layout). Adaptive, the default, is
+/// `DuoAdaptiveDeck`: a big trackpad that makes room for the keyboard while you type.
+///
+/// Classic: a top strip with the Linux keyboard layout and the F1–F12 switch. Then the
+/// keyboard, or the trackpad in its place. Bottom bar: the keyboard/trackpad switch and quick
+/// apps on the left, dictation in the middle, Return and the Command Menu on the right.
+///
+/// With a hardware keyboard only the trackpad shows; with a mouse too, LinPad hides the deck
+/// altogether.
 struct DuoInputDeck: View {
     let controller: DesktopController
     let showsKeyboard: Bool
     let showsTrackpad: Bool
     /// The trackpad fills the keyboard's place (the hand button switches).
     @AppStorage("duo.deck.trackpadMode") private var trackpadMode = false
+    @AppStorage(DuoDeckStyle.storageKey) private var style = DuoDeckStyle.adaptive
     @AppStorage(LinuxKeyboardLayouts.storageKey) private var layoutID = LinuxKeyboardLayouts.automatic
 
     private var showsTrackpadArea: Bool { showsTrackpad && (trackpadMode || !showsKeyboard) }
 
     var body: some View {
         WithPerceptionTracking {
-            GeometryReader { proxy in
-                let barHeight = min(max(proxy.size.height * 0.14, 44), 64)
-                let stripHeight = min(max(proxy.size.height * 0.06, 22), 30)
-                VStack(spacing: 6) {
-                    strip.frame(height: stripHeight)
-                    Group {
-                        if showsTrackpadArea {
-                            trackpad
-                        } else if showsKeyboard {
-                            DuoKeyboardView(model: controller.duoKeyboard)
-                        }
-                    }
-                    .frame(maxHeight: .infinity)
-                    bottomBar(height: barHeight)
+            Group {
+                // Adaptive needs the trackpad; with a mouse attached (monitor mode) Classic's
+                // keyboard-only deck is the right one.
+                if style == .adaptive && showsTrackpad {
+                    DuoAdaptiveDeck(controller: controller, showsKeyboard: showsKeyboard)
+                } else {
+                    classicDeck
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .frame(width: proxy.size.width, height: proxy.size.height)
             }
             .background(DuoDeckColors.background.ignoresSafeArea())
             .overlay(alignment: .top) { DuoDictationBubble(dictation: controller.duoDictation).offset(y: -56) }
             .environment(\.colorScheme, .dark)
             .onAppear { controller.duoPointer.show() }
             .onDisappear { controller.duoPointer.hide() }
+        }
+    }
+
+    private var classicDeck: some View {
+        GeometryReader { proxy in
+            let barHeight = min(max(proxy.size.height * 0.14, 44), 64)
+            let stripHeight = min(max(proxy.size.height * 0.06, 22), 30)
+            VStack(spacing: 6) {
+                strip.frame(height: stripHeight)
+                Group {
+                    if showsTrackpadArea {
+                        trackpad
+                    } else if showsKeyboard {
+                        DuoKeyboardView(model: controller.duoKeyboard)
+                    }
+                }
+                .frame(maxHeight: .infinity)
+                bottomBar(height: barHeight)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
     }
 

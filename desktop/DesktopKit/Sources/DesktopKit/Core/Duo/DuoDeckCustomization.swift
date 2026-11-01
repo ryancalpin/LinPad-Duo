@@ -97,6 +97,32 @@ enum DuoDeckAction: Codable, Hashable, Identifiable {
     }
 }
 
+/// The deck's layout (Settings › Laptop Keyboard › Layout).
+enum DuoDeckStyle: String, CaseIterable, Identifiable {
+    /// A big trackpad; the keyboard slides in while something is being typed.
+    case adaptive
+    /// The keyboard, or the trackpad in its place; the bottom bar's hand button switches.
+    case classic
+
+    static let storageKey = "duo.deck.style"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .adaptive: "Adaptive"
+        case .classic: "Classic"
+        }
+    }
+
+    var explanation: String {
+        switch self {
+        case .adaptive: "A big trackpad. The keyboard slides in when you click into a text box or the terminal; the keyboard button at the top right shows or hides it anytime."
+        case .classic: "The keyboard, or the trackpad in its place. The hand button in the bottom bar switches."
+        }
+    }
+}
+
 /// The deck's customizable parts, saved in UserDefaults: what each function-row key and
 /// bottom-bar button does, and how the microphone button works. The keyboard/trackpad
 /// switch and the letter keys themselves stay put, so the deck can't be left without a
@@ -176,12 +202,25 @@ struct DuoDeckSettingsSection: View {
     let controller: DesktopController?
     @Environment(\.desktopTheme) private var theme
     private let layout = DuoDeckLayout.shared
+    @AppStorage(DuoDeckStyle.storageKey) private var style = DuoDeckStyle.adaptive
     @State private var showsFunctionRow = false
 
     var body: some View {
         WithPerceptionTracking {
             SettingsSection(title: "Laptop Keyboard", symbol: "keyboard") {
                 Text("The on-screen keyboard in laptop pose, and on the phone while the desktop is on a monitor. Touch and hold a bottom-bar button on the keyboard to come here.")
+                    .font(.caption)
+                    .foregroundStyle(theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                SettingsRow(title: "Layout") {
+                    Picker("Layout", selection: $style) {
+                        ForEach(DuoDeckStyle.allCases) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .accessibilityIdentifier("settings.deck.style")
+                }
+                Text(style.explanation)
                     .font(.caption)
                     .foregroundStyle(theme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -199,11 +238,11 @@ struct DuoDeckSettingsSection: View {
                     .foregroundStyle(theme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
                 ThemedSeparator()
-                Text("Bottom bar, left of the mic").font(.subheadline.weight(.semibold)).foregroundStyle(theme.secondaryText)
+                Text(style == .adaptive ? "Beside the trackpad, under the mic" : "Bottom bar, left of the mic").font(.subheadline.weight(.semibold)).foregroundStyle(theme.secondaryText)
                 ForEach(0..<DuoDeckLayout.barSlots, id: \.self) { slot in
                     picker("Button \(slot + 1)", Binding(tracking: { layout.leftButtons[slot] }, set: { layout.leftButtons[slot] = $0 }))
                 }
-                Text("Bottom bar, right of the mic").font(.subheadline.weight(.semibold)).foregroundStyle(theme.secondaryText)
+                Text(style == .adaptive ? "Beside the trackpad, above More" : "Bottom bar, right of the mic").font(.subheadline.weight(.semibold)).foregroundStyle(theme.secondaryText)
                 ForEach(0..<DuoDeckLayout.barSlots, id: \.self) { slot in
                     picker("Button \(slot + 1)", Binding(tracking: { layout.rightButtons[slot] }, set: { layout.rightButtons[slot] = $0 }))
                 }
