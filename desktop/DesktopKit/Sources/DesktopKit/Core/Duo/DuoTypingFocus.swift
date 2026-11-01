@@ -35,6 +35,8 @@ final class DuoTypingFocus {
     }
 
     func update(_ signal: DuoTypingSignal) {
+        // The same focus again mustn't restart a pending hide.
+        guard signal != self.signal else { return }
         if signal.target != self.signal.target { override = nil }
         self.signal = signal
         apply()

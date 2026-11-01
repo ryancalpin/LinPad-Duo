@@ -318,7 +318,7 @@ final class DuoKeyboardModel {
     }
 
     /// The built-in Terminal app, or foot in the Linux session (`footclient` when run by hand).
-    static func isTerminal(appID: String) -> Bool {
+    nonisolated static func isTerminal(appID: String) -> Bool {
         appID == AppID.terminal || appID == LinuxAppID.prefix + "foot" || appID == LinuxAppID.prefix + "footclient"
     }
 

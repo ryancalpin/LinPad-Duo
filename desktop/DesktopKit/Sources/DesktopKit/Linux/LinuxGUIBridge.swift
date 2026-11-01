@@ -581,9 +581,10 @@ final class LinuxGUIBridge {
             surface.textInput = nil
             surface.view?.textInputDidChange(activationChanged: true)
         }
-        textInputSurfaceID = nil
-        guard enabled, let surface = surfaces[id] else { return }
-        textInputSurfaceID = id
+        // Observed (the Adaptive deck's keyboard): set once, and only when it changes.
+        let active = enabled && surfaces[id] != nil ? id : nil
+        if textInputSurfaceID != active { textInputSurfaceID = active }
+        guard let active, let surface = surfaces[active] else { return }
         let old = surface.textInput
         var state = old ?? LinuxTextInputState()
         state.purpose = purpose
@@ -664,7 +665,10 @@ final class LinuxGUIBridge {
         let surface = LinuxSurface(id: 1, kind: .toplevel, parentID: 0)
         surface.appID = parts[0]
         surface.title = parts[0]
-        if parts.contains("text") { surface.textInput = LinuxTextInputState() }
+        if parts.contains("text") {
+            surface.textInput = LinuxTextInputState()
+            textInputSurfaceID = surface.id
+        }
         let size = CGSize(width: 900, height: 560)
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
@@ -685,6 +689,8 @@ final class LinuxGUIBridge {
     #endif
 
     private func unmap(_ surface: LinuxSurface) {
+        // A new session reuses surface ids; a stale one would read as a focused text box.
+        if textInputSurfaceID == surface.id { textInputSurfaceID = nil }
         releaseMapping(surface)
         if surface.kind == .popup {
             surface.view?.removeFromSuperview()
