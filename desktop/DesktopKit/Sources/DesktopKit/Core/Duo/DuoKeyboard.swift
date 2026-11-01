@@ -189,6 +189,11 @@ final class DuoKeyboardModel {
         default:
             break
         }
+        // Esc closes the launcher, Overview or a menu first, as a hardware Esc does (overlay.close).
+        if key.code == 1, case .special = key.kind, let controller, controller.isOverlayPresented {
+            controller.dismissTopOverlay()
+            return
+        }
         let held = modifiers.filter { $0.value != .off }.map(\.key)
         let code = key.functionCode.flatMap { showsFunctionKeys ? $0 : nil } ?? key.code
         if let surface = linuxTarget, let bridge = controller?.linux {

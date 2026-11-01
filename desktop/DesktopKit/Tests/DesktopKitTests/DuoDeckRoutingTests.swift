@@ -31,4 +31,18 @@ final class DuoDeckRoutingTests: XCTestCase {
         _ = present("files", in: controller)
         XCTAssertNil(controller.deckLinuxTarget(firstResponder: nil), "not a Linux window")
     }
+
+    func testEscapeClosesTheLauncher() {
+        let controller = makeController()
+        controller.toggleLauncher()
+        XCTAssertTrue(controller.isLauncherPresented)
+        controller.duoKeyboard.perform(.escapeKey)
+        XCTAssertFalse(controller.isLauncherPresented, "the shortcut row's esc")
+
+        controller.toggleLauncher()
+        let esc = DuoKey.functionRow[0]
+        controller.duoKeyboard.press(esc)
+        controller.duoKeyboard.release(esc)
+        XCTAssertFalse(controller.isLauncherPresented, "the keyboard's esc key")
+    }
 }
