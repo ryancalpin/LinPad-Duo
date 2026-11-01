@@ -78,6 +78,17 @@ extension DesktopController {
             focusedWindowID: focused,
             focusedAppID: windowManager.focusedWindow?.appID,
             focusedLinuxSurface: focused.flatMap { id in linuxWindows.first { $0.value == id }?.key },
-            textInputSurface: linux?.textInputSurfaceID)
+            textInputSurface: linuxToplevel(of: linux?.textInputSurfaceID))
+    }
+
+    /// The toplevel a Linux surface belongs to: ishwl reports a text box in a GTK popover
+    /// with the popover's own id, and windows are toplevels.
+    private func linuxToplevel(of id: UInt32?) -> UInt32? {
+        guard let linux else { return nil }
+        var surface = id.flatMap(linux.surface(withID:))
+        while let popup = surface, popup.kind != .toplevel {
+            surface = linux.surface(withID: popup.parentID)
+        }
+        return surface?.id
     }
 }
