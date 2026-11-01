@@ -73,19 +73,27 @@ struct DuoAdaptiveDeck: View {
                     let spacing: CGFloat = 6
                     let available = max(proxy.size.height - 12 - Self.rowHeight - spacing, 0)
                     // The small pad keeps at least 80 pt; the keys give way first.
-                    let padHeight = keysShown ? min(max(available * 0.38, Self.minimumPad), available) : available
-                    let keyboardHeight = max(available - padHeight - spacing, 0)
-                    VStack(spacing: spacing) {
-                        // Above the keys, so they slide out from under it rather than over it.
+                    let smallPad = min(max(available * 0.38, Self.minimumPad), available)
+                    let keyboardHeight = max(available - smallPad - spacing, 0)
+                    let padHeight = keysShown ? smallPad : available
+                    VStack(spacing: 0) {
                         shortcutRow(keysShown: keysShown)
                             .frame(height: Self.rowHeight)
-                            .background(DuoDeckColors.background)
-                            .zIndex(1)
-                        if keysShown {
-                            DuoKeyboardView(model: controller.duoKeyboard)
-                                .frame(height: keyboardHeight)
-                                .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+                            .padding(.bottom, spacing)
+                        // The keys slide down out of the shortcut row. Their slot grows with them
+                        // and clips them, so they never pass over the hinge or the top screen;
+                        // only the keys, since the mic's slide hints draw above the pad.
+                        ZStack(alignment: .top) {
+                            if keysShown {
+                                DuoKeyboardView(model: controller.duoKeyboard)
+                                    .frame(height: keyboardHeight)
+                                    .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+                            }
                         }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: keysShown ? keyboardHeight : 0, alignment: .top)
+                        .clipped()
+                        .padding(.bottom, keysShown ? spacing : 0)
                         padRow(height: padHeight, width: proxy.size.width - 20, compact: keysShown)
                             .frame(height: padHeight)
                     }
