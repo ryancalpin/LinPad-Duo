@@ -152,7 +152,7 @@ public final class DuoDictation {
         let focused = controller.windowManager.focusedWindowID
         if controller.linuxWindows.contains(where: { $0.value == focused }), let bridge = controller.linux {
             bridge.type(text)
-        } else if let input = UIResponder.desktopCurrentFirstResponder as? UIKeyInput {
+        } else if let input = controller.deckTextTarget {
             input.insertText(text)
         }
     }

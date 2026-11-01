@@ -40,11 +40,6 @@ public struct DesktopRootView: View {
         _controller = State(initialValue: DesktopController(host: host, apps: apps, systemControls: systemControls))
     }
 
-    /// Tests: a desktop around a controller they keep a handle on.
-    init(controller: DesktopController) {
-        _controller = State(initialValue: controller)
-    }
-
     public var body: some View {
         WithPerceptionTracking { root }
             .modifier(AppScenePhase())

@@ -11,11 +11,10 @@ private let trackpadLogger = Logger(subsystem: "DesktopKit", category: "DuoTrack
 /// trackpad). It lives in desktop coordinates and is drawn by `DuoPointerOverlay`.
 ///
 /// Over a Linux window it sends real pointer events (motion, buttons, scrolling) through
-/// the bridge, the same path a hardware mouse takes. Elsewhere a click first presses the
-/// control under the pointer through iOS's accessibility interface, the way Voice Control
-/// does (the panel, title-bar buttons). SwiftUI lists nothing inside scroll views that way,
-/// so anything else (the launcher grid, built-in apps' lists, the terminal) gets a real
-/// finger touch at the pointer (`DTSTouch`).
+/// the bridge, the same path a hardware mouse takes. Elsewhere a click is a real finger
+/// touch at the pointer (`DTSTouch`), so the topmost thing there responds as to a tap.
+/// Without that SPI it presses the control under the pointer through iOS's accessibility
+/// interface, the way Voice Control does; that can't see inside scroll views.
 @Perceptible @MainActor
 final class DuoVirtualPointer {
     private enum Button {
@@ -37,12 +36,6 @@ final class DuoVirtualPointer {
         let speed = hypot(delta.width, delta.height)
         let gain = min(1.2 + speed / 14, 3.2)
         return CGSize(width: delta.width * gain, height: delta.height * gain)
-    }
-
-    /// Tests: puts the pointer at a desktop point.
-    func place(at point: CGPoint) {
-        isShown = true
-        location = point
     }
 
     func show() {
@@ -79,13 +72,14 @@ final class DuoVirtualPointer {
         guard let (surface, point) = linuxTarget() else {
             focusWindowUnderPointer()
             guard !right else { return }
-            // Controls SwiftUI lists to accessibility (the panel, title bars) are pressed
-            // directly; anything else (scroll view content, the terminal) gets a real touch.
+            // A real touch, which hits only what is on top, as a finger would. Pressing a
+            // control through accessibility is the fallback: it can't see inside scroll
+            // views, and it can reach a control under a window (a desktop icon).
             let path: String
-            if activateControlUnderPointer() {
-                path = "control"
-            } else if let (window, windowPoint) = windowTarget(), DTSTouch.tap(at: windowPoint, in: window) {
+            if let (window, windowPoint) = windowTarget(), DTSTouch.tap(at: windowPoint, in: window) {
                 path = "touch"
+            } else if activateControlUnderPointer() {
+                path = "control"
             } else if clickWebView() {
                 path = "web"
             } else {
@@ -361,6 +355,10 @@ struct DuoTrackpad: UIViewRepresentable {
         private var lastCentroid = CGPoint.zero
         private var lastTap = Date.distantPast
         private var isDragging = false
+        /// A touch soon after a tap: a drag once it moves, otherwise the second click of a
+        /// double-click. Until it moves past the slop the pointer stays put.
+        private var mayDrag = false
+        private var pendingMove = CGSize.zero
         private var isScrolling = false
 
         init(pointer: DuoVirtualPointer) {
@@ -393,10 +391,8 @@ struct DuoTrackpad: UIViewRepresentable {
             began = Date()
             travelled = 0
             mostTouches = active.count
-            if active.count == 1 && Date().timeIntervalSince(lastTap) < Self.dragWindow {
-                isDragging = true
-                pointer.beginDrag()
-            }
+            mayDrag = active.count == 1 && Date().timeIntervalSince(lastTap) < Self.dragWindow
+            pendingMove = .zero
         }
 
         override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -404,6 +400,15 @@ struct DuoTrackpad: UIViewRepresentable {
             let delta = CGSize(width: now.x - lastCentroid.x, height: now.y - lastCentroid.y)
             lastCentroid = now
             travelled += hypot(delta.width, delta.height)
+            if mayDrag && !isDragging && active.count == 1 {
+                pendingMove.width += delta.width
+                pendingMove.height += delta.height
+                guard travelled >= Self.tapSlop else { return }
+                isDragging = true
+                pointer.beginDrag()
+                pointer.move(by: pendingMove)
+                return
+            }
             if active.count >= 2 && !isDragging {
                 isScrolling = true
                 pointer.scroll(by: delta)
@@ -431,9 +436,11 @@ struct DuoTrackpad: UIViewRepresentable {
                 pointer.endScroll()
             } else if wasTap {
                 pointer.click(right: mostTouches >= 2)
-                if mostTouches == 1 { lastTap = Date() }
+                // A second tap completes a double-click; a third starts over.
+                lastTap = mostTouches == 1 && !mayDrag ? Date() : .distantPast
             }
             isDragging = false
+            mayDrag = false
             isScrolling = false
             mostTouches = 0
         }

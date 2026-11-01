@@ -304,6 +304,12 @@ struct DuoLaptopLayout<Desktop: View>: View {
                     }
                 }
             }
+            // The deck is the keyboard in laptop pose; iOS's stays down meanwhile.
+            .onChangeCompat(of: isActive, initial: true) { _, active in
+                OnScreenKeyboard.shared.setLaptopDeckShown(active)
+                if active { controller.input.ensureKeyCommandsReachable() }
+            }
+            .onDisappear { OnScreenKeyboard.shared.setLaptopDeckShown(false) }
         }
     }
 

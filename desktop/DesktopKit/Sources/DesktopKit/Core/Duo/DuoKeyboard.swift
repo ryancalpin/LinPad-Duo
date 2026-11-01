@@ -286,7 +286,7 @@ final class DuoKeyboardModel {
             guard let text = UIPasteboard.general.string, !text.isEmpty else { return }
             if linuxTarget != nil, let bridge = controller.linux {
                 bridge.type(text)
-            } else if let input = UIResponder.desktopCurrentFirstResponder as? UIKeyInput {
+            } else if let input = controller.deckTextTarget {
                 input.insertText(text)
             }
         case .terminal:
@@ -322,7 +322,7 @@ final class DuoKeyboardModel {
     }
 
     private func typeIntoFirstResponder(_ key: DuoKey, modifiers: Set<DuoKey.Modifier>) {
-        guard let input = UIResponder.desktopCurrentFirstResponder as? UIKeyInput else { return }
+        guard let input = controller?.deckTextTarget else { return }
         if key.kind == .backspace {
             input.deleteBackward()
             return
@@ -493,5 +493,24 @@ private struct DuoKeyCap: View {
         case .functionSlot(let index): return DuoDeckLayout.shared.functionRow[index].title(in: model.controller)
         default: return key.caption ?? key.label
         }
+    }
+}
+
+extension DesktopController {
+    /// Where the deck and dictation type outside Linux windows: the first responder, or the
+    /// focused window's own text view (the terminal), which doesn't take first responder
+    /// while the deck stands in for iOS's keyboard.
+    var deckTextTarget: UIKeyInput? {
+        if let responder = UIResponder.desktopCurrentFirstResponder as? UIKeyInput { return responder }
+        guard let id = windowManager.focusedWindowID, let root = input.referenceView?.window else { return nil }
+        var stack: [UIView] = [root]
+        while let view = stack.popLast() {
+            if let text = view as? UIKeyInput, !(view is LinuxSurfaceView), !(view is UITextField),
+               !(view is UITextView), input.window(containing: view)?.id == id {
+                return text
+            }
+            stack.append(contentsOf: view.subviews)
+        }
+        return nil
     }
 }

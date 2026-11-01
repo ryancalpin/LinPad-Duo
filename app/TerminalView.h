@@ -25,6 +25,12 @@ enum OverrideAppearance {
 @property (nonatomic) UIKeyboardAppearance keyboardAppearance;
 
 @property (weak) IBOutlet UIInputView *inputAccessoryView;
+
+/// Laptop pose's deck is up (DesktopKit's OnScreenKeyboard): it is the keyboard, so the
+/// terminal keeps iOS's keyboard down while it stays first responder for the deck's keys.
+@property (class, readonly) BOOL laptopDeckShown;
+/// The deck is up and no hardware keyboard is attached: the terminal doesn't take first responder.
+@property (class, readonly) BOOL suppressesSystemKeyboard;
 @property (weak) IBOutlet UIButton *controlKey;
 
 @property (nonatomic) Terminal *terminal;

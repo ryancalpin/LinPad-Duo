@@ -304,7 +304,11 @@ final class LinuxSurfaceView: UIView {
         }
     }
 
-    override var canBecomeFirstResponder: Bool { isToplevel }
+    /// Not while laptop pose's deck is the keyboard: first responder would bring iOS's
+    /// keyboard over the deck, and the deck sends keys to the focused window directly.
+    override var canBecomeFirstResponder: Bool {
+        isToplevel && !MainActor.assumeIsolated { OnScreenKeyboard.shared.suppressesSystemKeyboard }
+    }
 
     override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
         if presses.contains(where: { $0.key != nil }) { HardwareKeyboardMonitor.noteHardwareKeyPress() }

@@ -23,7 +23,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// The finger lifting.
 - (void)end;
 
-/// Touch down and lift at `point`. Returns NO if unavailable.
+/// The touch went through UIApplication with UIKit's own touches event, so gesture
+/// recognizers (SwiftUI buttons, scroll views) saw it. UIKit makes that event with the
+/// first real touch; before one (unit tests) the touch only reaches the view's touches
+/// methods.
+@property (nonatomic, readonly, getter=isDeliveredThroughUIKit) BOOL deliveredThroughUIKit;
+
+/// Touch down and lift at `point`. Returns whether it went through UIKit (above); NO if
+/// unavailable.
 + (BOOL)tapAtPoint:(CGPoint)point inWindow:(UIWindow *)window NS_SWIFT_NAME(tap(at:in:));
 
 @end

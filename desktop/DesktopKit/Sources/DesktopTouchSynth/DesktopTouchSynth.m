@@ -121,6 +121,7 @@ static UIView *TouchTarget(UIWindow *window, CGPoint point) {
 }
 
 @implementation DTSTouch {
+    BOOL _throughUIKit;
     UITouch *_touch;
     UIWindow *_window;
     CGPoint _location;
@@ -179,7 +180,11 @@ static UIView *TouchTarget(UIWindow *window, CGPoint point) {
 - (void)send:(UITouchPhase)phase {
     [_touch setTimestamp:NSProcessInfo.processInfo.systemUptime];
     [_touch setPhase:phase];
-    IOHIDEventRef hid = CreateHandEvent(_location, phase);
+    // The digitizer reports in the screen's fixed (native, portrait) coordinates; UIKit
+    // rotates them to the interface. The Duo's inner screen runs landscape, so window
+    // coordinates here would land the touch somewhere else entirely.
+    CGPoint native = [_window convertPoint:_location toCoordinateSpace:_window.screen.fixedCoordinateSpace];
+    IOHIDEventRef hid = CreateHandEvent(native, phase);
     [_touch _setHidEvent:hid];
     // Newer iOS keeps a touches event per window; _touchesEvent can be nil there.
     UIApplication *app = UIApplication.sharedApplication;
@@ -189,6 +194,7 @@ static UIView *TouchTarget(UIWindow *window, CGPoint point) {
     // UIKit makes it with the first real touch; before that (unit tests) make one, which
     // UIApplication drops, and send it to the window: views get touches, recognizers don't.
     BOOL uikitEvent = event != nil;
+    if (phase == UITouchPhaseBegan) _throughUIKit = uikitEvent;
     static UIEvent *ownEvent;
     if (event == nil) {
         if (ownEvent == nil) {
@@ -213,11 +219,15 @@ static UIView *TouchTarget(UIWindow *window, CGPoint point) {
     CFRelease(hid);
 }
 
+- (BOOL)isDeliveredThroughUIKit {
+    return _throughUIKit;
+}
+
 + (BOOL)tapAtPoint:(CGPoint)point inWindow:(UIWindow *)window {
     DTSTouch *touch = [self beginAtPoint:point inWindow:window];
     if (touch == nil) return NO;
     [touch end];
-    return YES;
+    return touch.isDeliveredThroughUIKit;
 }
 
 @end

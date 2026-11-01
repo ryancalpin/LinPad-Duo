@@ -7,6 +7,7 @@
 
 #import "ScrollbarView.h"
 #import "TerminalView.h"
+#import <GameController/GameController.h>
 #import "UserPreferences.h"
 #import "UIApplication+OpenURL.h"
 #import "NSObject+SaneKVO.h"
@@ -48,10 +49,32 @@ struct rowcol {
 
 @end
 
+/// DesktopKit's OnScreenKeyboard.laptopDeckDidChangeNotification.
+NSNotificationName const TerminalLaptopDeckDidChange = @"DesktopLaptopDeckDidChange";
+static BOOL laptopDeckShown;
+
 @implementation TerminalView
 @synthesize inputDelegate;
 @synthesize tokenizer;
 @synthesize canBecomeFirstResponder;
+
++ (void)load {
+    // Registered before any terminal controller, so the flag is current when they hear it.
+    [NSNotificationCenter.defaultCenter addObserverForName:TerminalLaptopDeckDidChange object:nil
+                                                     queue:NSOperationQueue.mainQueue
+                                                usingBlock:^(NSNotification *note) {
+        laptopDeckShown = [note.userInfo[@"shown"] boolValue];
+    }];
+}
+
++ (BOOL)laptopDeckShown {
+    return laptopDeckShown;
+}
+
++ (BOOL)suppressesSystemKeyboard {
+    return laptopDeckShown && GCKeyboard.coalescedKeyboard == nil;
+}
+
 
 - (void)awakeFromNib {
     [super awakeFromNib];
@@ -207,6 +230,11 @@ static NSString *const HANDLERS[] = {@"syncFocus", @"focus", @"newScrollHeight",
 }
 
 - (BOOL)becomeFirstResponder {
+    // While the deck is the keyboard the terminal stays out of first responder, which would
+    // bring iOS's keyboard over the deck; the deck types into it directly (DesktopKit's
+    // DesktopController.deckTextTarget).
+    if (TerminalView.suppressesSystemKeyboard)
+        return NO;
     self.terminalFocused = YES;
     [self reloadInputViews];
     return [super becomeFirstResponder];

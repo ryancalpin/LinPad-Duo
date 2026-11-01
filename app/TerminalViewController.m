@@ -91,6 +91,10 @@
                selector:@selector(_updateBadge)
                    name:FsUpdatedNotification
                  object:nil];
+    [center addObserver:self
+               selector:@selector(laptopDeckChanged)
+                   name:@"DesktopLaptopDeckDidChange"
+                 object:nil];
 
 
     [self _updateStyleFromPreferences:NO];
@@ -335,7 +339,15 @@
 // bottom edge would sit over the dock or taskbar (Settings > Show extra keys row).
 - (BOOL)desktopShowsExtraKeys {
     NSNumber *enabled = [NSUserDefaults.standardUserDefaults objectForKey:@"desktop.keyboard.extraKeysRow"];
-    return (enabled == nil || enabled.boolValue) && !self.hasExternalKeyboard && GCKeyboard.coalescedKeyboard == nil;
+    return (enabled == nil || enabled.boolValue) && !self.hasExternalKeyboard && GCKeyboard.coalescedKeyboard == nil
+        && !TerminalView.laptopDeckShown;
+}
+
+// Laptop pose's deck came or went: iOS's keyboard and the extra keys row go away or come back.
+- (void)laptopDeckChanged {
+    [self _updateStyleFromPreferences:NO];
+    if (TerminalView.suppressesSystemKeyboard && self.termView.isFirstResponder)
+        [self.termView resignFirstResponder];
 }
 
 - (void)_updateStyleAnimated {

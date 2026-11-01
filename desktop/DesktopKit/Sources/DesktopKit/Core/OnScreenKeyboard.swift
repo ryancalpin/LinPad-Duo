@@ -46,6 +46,23 @@ final class OnScreenKeyboard {
     /// The on-screen keyboard is currently up.
     private(set) var isVisible = false
 
+    /// Posted when laptop pose's deck comes or goes, with `userInfo["shown"]`: the iSH
+    /// terminal (app/TerminalView.m) keeps iOS's keyboard down by it too.
+    static let laptopDeckDidChangeNotification = Notification.Name("DesktopLaptopDeckDidChange")
+    /// Laptop pose's deck is up. It is the keyboard then, and iOS's stays down; everywhere
+    /// else iOS's keyboard works as usual.
+    private(set) var isLaptopDeckShown = false
+
+    /// The deck stands in for iOS's keyboard: Linux windows and the terminal don't take
+    /// first responder (the deck types into them directly), and the built-in apps' text
+    /// fields get an empty input view. A hardware keyboard brings no software keyboard
+    /// anyway, so then nothing changes.
+    var suppressesSystemKeyboard: Bool { isLaptopDeckShown && !HardwareKeyboardMonitor.isAttached }
+
+    /// For text fields while the deck is up. A plain zero-size view: a UIInputView, even at
+    /// zero height, gets iOS 27's keyboard glass at full keyboard height over the deck.
+    @PerceptionIgnored private lazy var emptyInputView = UIView(frame: .zero)
+
     /// Stands in for the system keyboard; with zero height nothing shows, and hardware keys
     /// still arrive as presses.
     @PerceptionIgnored private lazy var placeholder: UIView = {
@@ -63,6 +80,25 @@ final class OnScreenKeyboard {
         center.addObserver(forName: UIResponder.keyboardDidShowNotification, object: nil, queue: .main) { [weak self] note in
             let frame = (note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue ?? .zero
             MainActor.assumeIsolated { self?.isVisible = frame.height > 100 }
+        }
+        // Text fields and views in the built-in apps: no system keyboard over the deck.
+        for name in [UITextField.textDidBeginEditingNotification, UITextView.textDidBeginEditingNotification] {
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
+                let responder = note.object as? UIResponder
+                MainActor.assumeIsolated {
+                    guard let self, self.suppressesSystemKeyboard, let responder else { return }
+                    self.setPlaceholder(true, on: responder)
+                }
+            }
+        }
+        for name in [UITextField.textDidEndEditingNotification, UITextView.textDidEndEditingNotification] {
+            center.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
+                let responder = note.object as? UIResponder
+                MainActor.assumeIsolated {
+                    guard let self, let responder else { return }
+                    self.setPlaceholder(false, on: responder)
+                }
+            }
         }
         center.addObserver(forName: UIResponder.keyboardDidHideNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
@@ -83,6 +119,36 @@ final class OnScreenKeyboard {
         // The app has a text field focused (text-input-v3 enable): type into it.
         if (responder as? LinuxSurfaceView)?.surface?.textInput != nil { return nil }
         return placeholder
+    }
+
+    /// Laptop pose's deck appeared or went away.
+    func setLaptopDeckShown(_ shown: Bool) {
+        guard shown != isLaptopDeckShown else { return }
+        isLaptopDeckShown = shown
+        NotificationCenter.default.post(name: Self.laptopDeckDidChangeNotification, object: nil, userInfo: ["shown": shown])
+        guard let responder = UIResponder.desktopCurrentFirstResponder else { return }
+        if responder is UITextField || responder is UITextView {
+            setPlaceholder(shown && suppressesSystemKeyboard, on: responder)
+        } else if shown && suppressesSystemKeyboard && responder is LinuxSurfaceView {
+            // Its keyboard goes away with first responder; the deck types into it anyway.
+            responder.resignFirstResponder()
+        }
+    }
+
+    /// The empty input view on a built-in app's text field or view, or back to the system keyboard.
+    private func setPlaceholder(_ on: Bool, on responder: UIResponder) {
+        let current: UIView?
+        switch responder {
+        case let field as UITextField: current = field.inputView
+        case let view as UITextView: current = view.inputView
+        default: return
+        }
+        // Leave a field's own custom input view (a picker) alone.
+        guard on ? current == nil : current === emptyInputView else { return }
+        let view = on ? emptyInputView : nil
+        (responder as? UITextField)?.inputView = view
+        (responder as? UITextView)?.inputView = view
+        if responder.isFirstResponder { responder.reloadInputViews() }
     }
 
     /// Panel button: brings the keyboard up for the focused Linux window, or puts it away.
