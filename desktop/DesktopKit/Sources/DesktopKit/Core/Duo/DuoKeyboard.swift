@@ -281,7 +281,7 @@ final class DuoKeyboardModel {
             release(key)
         case .interrupt:
             modifiers[.control] = .latched
-            let key = DuoKey.char(46, "c", "C")
+            let key = DuoKey.char(code(of: "c", us: 46), "c", "C")
             press(key)
             release(key)
         case .pasteText:
@@ -311,7 +311,8 @@ final class DuoKeyboardModel {
         if let appID = controller.windowManager.focusedWindow?.appID, Self.isTerminal(appID: appID) { return }
         if let surface = linuxTarget, let bridge = controller.linux {
             // The exact chord, whatever modifiers are latched or locked on the deck.
-            let chord: [UInt32] = redo ? [29, 42, 44] : [29, 44]
+            let z = code(of: "z", us: 44)
+            let chord: [UInt32] = redo ? [29, 42, z] : [29, z]
             for code in chord { bridge.key(code, pressed: true, focusedSurface: surface) }
             for code in chord.reversed() { bridge.key(code, pressed: false, focusedSurface: surface) }
         } else if let manager = UIResponder.desktopCurrentFirstResponder?.undoManager {
@@ -322,6 +323,13 @@ final class DuoKeyboardModel {
     /// The built-in Terminal app, or foot in the Linux session (`footclient` when run by hand).
     nonisolated static func isTerminal(appID: String) -> Bool {
         appID == AppID.terminal || appID == LinuxAppID.prefix + "foot" || appID == LinuxAppID.prefix + "footclient"
+    }
+
+    /// Where a shortcut's letter is in the Linux keymap (Ctrl+Z is on the US W key on
+    /// AZERTY): `us` when the keymap has no such letter, or there is no Linux session.
+    private func code(of letter: Unicode.Scalar, us: UInt32) -> UInt32 {
+        guard let layout = controller?.linux?.keyboardLayout.layout else { return us }
+        return LinuxKeyCodes.evdev(typing: letter, in: layout) ?? us
     }
 
     /// Presses and releases one key in the focused Linux window.

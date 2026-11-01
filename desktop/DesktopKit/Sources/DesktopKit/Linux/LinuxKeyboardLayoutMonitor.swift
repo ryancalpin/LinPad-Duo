@@ -41,6 +41,9 @@ final class LinuxKeyboardLayoutMonitor {
         })
     }
 
+    /// The keymap ishwl has, or gets when the session connects.
+    var layout: LinuxXKBLayout { resolver.layout }
+
     /// A session connected (again): it starts with ishwl's default keymap, so send ours.
     func attach(send: @escaping (String) -> Void) {
         self.send = send

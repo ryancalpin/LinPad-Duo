@@ -28,6 +28,20 @@ enum LinuxKeyCodes {
         return code == 0 ? nil : UInt32(code)
     }
 
+    /// The evdev code of the key that types `letter` unshifted in `layout` (from its
+    /// fingerprint), so a shortcut sent by position (the deck's Ctrl+Z) lands on that letter
+    /// on AZERTY, QWERTZ or Dvorak. Nil when no key types it (Cyrillic, Greek): those keymaps
+    /// add US as a second group, where Linux apps look shortcuts up, so US positions are right.
+    static func evdev(typing letter: Unicode.Scalar, in layout: LinuxXKBLayout) -> UInt32? {
+        typealias Resolver = LinuxKeyboardLayoutResolver
+        guard let table = Resolver.fingerprint(layout) else { return nil }
+        // The two ISO keys trade places on Apple keyboards; no letter is on them anyway.
+        let iso = [Resolver.isoGrave, Resolver.isoNonUSBackslash].compactMap(Resolver.fingerprintIndex)
+        guard let index = table.indices.first(where: { table[$0] == letter && !iso.contains($0) }),
+              let usage = UIKeyboardHIDUsage(rawValue: index + 0x04) else { return nil }
+        return evdev(for: usage)
+    }
+
     private static let modifierTable: [UInt32] = [29, 42, 56, 125, 97, 54, 100, 126]
 
     /// JIS and Korean keys: Ro, Katakana/Hiragana, Yen, Henkan, Muhenkan, Hangul, Hanja.

@@ -182,6 +182,22 @@ final class LinuxKeyboardLayoutTests: XCTestCase {
         XCTAssertTrue(swapped.swapsISOKeys)
     }
 
+    /// The deck's Undo (Ctrl+Z) and Interrupt (Ctrl+C) find their letter in the keymap.
+    func testShortcutLettersFollowTheKeymap() throws {
+        func code(_ letter: Unicode.Scalar, _ id: String) throws -> UInt32? {
+            LinuxKeyCodes.evdev(typing: letter, in: try XCTUnwrap(LinuxKeyboardLayouts.layout(id: id), id))
+        }
+        XCTAssertEqual(try code("z", "us:mac"), 44)
+        XCTAssertEqual(try code("c", "us:mac"), 46)
+        XCTAssertEqual(try code("z", "fr:mac"), 17, "AZERTY: Z is on the US W key")
+        XCTAssertEqual(try code("w", "fr:mac"), 44, "and W on the US Z key")
+        XCTAssertEqual(try code("c", "fr:mac"), 46)
+        XCTAssertEqual(try code("z", "de:mac"), 21, "QWERTZ: on the US Y key")
+        XCTAssertEqual(try code("z", "us:dvorak"), 53, "Dvorak: on the US slash key")
+        XCTAssertEqual(try code("c", "us:dvorak"), 23)
+        XCTAssertNil(try code("z", "ru:mac"), "Cyrillic: Linux finds Ctrl+Z in the US group")
+    }
+
     @MainActor
     func testISOSwapInEvdevTable() {
         defer { LinuxKeyCodes.swapsISOKeys = false }
