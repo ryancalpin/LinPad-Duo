@@ -307,12 +307,11 @@ final class DuoKeyboardModel {
     private func undoOrRedo(redo: Bool) {
         guard let controller else { return }
         if let appID = controller.windowManager.focusedWindow?.appID, Self.isTerminal(appID: appID) { return }
-        if linuxTarget != nil {
-            modifiers[.control] = .latched
-            if redo { modifiers[.shift] = .latched }
-            let key = DuoKey.char(44, "z", "Z")
-            press(key)
-            release(key)
+        if let surface = linuxTarget, let bridge = controller.linux {
+            // The exact chord, whatever modifiers are latched or locked on the deck.
+            let chord: [UInt32] = redo ? [29, 42, 44] : [29, 44]
+            for code in chord { bridge.key(code, pressed: true, focusedSurface: surface) }
+            for code in chord.reversed() { bridge.key(code, pressed: false, focusedSurface: surface) }
         } else if let manager = UIResponder.desktopCurrentFirstResponder?.undoManager {
             if redo { manager.redo() } else { manager.undo() }
         }
