@@ -26,7 +26,9 @@ struct DuoInputDeck: View {
 
     var body: some View {
         WithPerceptionTracking {
-            Group {
+            // A ZStack rather than a Group, which would hand onAppear/onDisappear to each
+            // branch: switching layouts would race the new one's show() with the old one's hide().
+            ZStack {
                 // Adaptive needs the trackpad; with a mouse attached (monitor mode) Classic's
                 // keyboard-only deck is the right one.
                 if style == .adaptive && showsTrackpad {
@@ -45,23 +47,26 @@ struct DuoInputDeck: View {
 
     private var classicDeck: some View {
         GeometryReader { proxy in
-            let barHeight = min(max(proxy.size.height * 0.14, 44), 64)
-            let stripHeight = min(max(proxy.size.height * 0.06, 22), 30)
-            VStack(spacing: 6) {
-                strip.frame(height: stripHeight)
-                Group {
-                    if showsTrackpadArea {
-                        trackpad
-                    } else if showsKeyboard {
-                        DuoKeyboardView(model: controller.duoKeyboard)
+            // The closure runs outside the body's tracking, and the strip and bar read the models.
+            WithPerceptionTracking {
+                let barHeight = min(max(proxy.size.height * 0.14, 44), 64)
+                let stripHeight = min(max(proxy.size.height * 0.06, 22), 30)
+                VStack(spacing: 6) {
+                    strip.frame(height: stripHeight)
+                    Group {
+                        if showsTrackpadArea {
+                            trackpad
+                        } else if showsKeyboard {
+                            DuoKeyboardView(model: controller.duoKeyboard)
+                        }
                     }
+                    .frame(maxHeight: .infinity)
+                    bottomBar(height: barHeight)
                 }
-                .frame(maxHeight: .infinity)
-                bottomBar(height: barHeight)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .frame(width: proxy.size.width, height: proxy.size.height)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .frame(width: proxy.size.width, height: proxy.size.height)
         }
     }
 
