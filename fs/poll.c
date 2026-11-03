@@ -12,6 +12,7 @@
 #include "fs/fd.h"
 #include "fs/poll.h"
 #include "fs/real.h"
+#include "fs/sock.h"
 
 #include "fs/sockrestart.h"
 
@@ -80,10 +81,14 @@ static inline bool poll_fd_is_real(struct poll_fd *pollfd) {
     // whenever the offset is short of EOF. When the guest asked for neither
     // POLLIN nor POLLOUT (Rust's start-up poll of fds 0-2, timeout 0) that event
     // matched nothing and poll_wait looped on it forever.
+    // Sockets are host sockets with their own poll op (sock_poll). Leaving them
+    // out meant a guest poll on a socket woke only on the 1 s recheck in
+    // poll_wait: ~900 ms per Wayland, D-Bus and Firefox IPC message.
     mode_t_ type = pollfd->fd->type;
     if (S_ISREG(type) || S_ISDIR(type))
         return false;
-    return pollfd->fd->ops->poll == realfs_poll || poll_fd_is_epoll(pollfd);
+    int (*op)(struct fd *) = pollfd->fd->ops->poll;
+    return op == realfs_poll || op == sock_poll || poll_fd_is_epoll(pollfd);
 }
 
 // What to register on the host for a member fd. A nested epoll set is

@@ -1269,7 +1269,7 @@ static ssize_t sock_host_recvmsg(struct fd *sock, struct msghdr *msg, int flags)
 }
 
 // A record that was collected but not taken (MSG_PEEK) is still readable.
-static int sock_poll(struct fd *fd) {
+int sock_poll(struct fd *fd) {
     int types = realfs_poll(fd);
     if (fd->socket.seq_framed && fd->socket.seq_rec_ready)
         types |= POLL_READ;

@@ -23,6 +23,8 @@ bool is_adhoc_fd(struct fd *fd) { (void) fd; return false; }
 void sockrestart_begin_listen_wait(struct fd *fd) { (void) fd; }
 void sockrestart_end_listen_wait(struct fd *fd) { (void) fd; }
 bool sockrestart_should_restart_listen_wait(void) { return false; }
+// fs/sock.c's poll op, without the SEQPACKET record state the fixtures don't have.
+int sock_poll(struct fd *fd) { return realfs_poll(fd); }
 void ish_printk(const char *format, ...) {
     va_list args;
     va_start(args, format);
@@ -39,6 +41,7 @@ void ish_printk(const char *format, ...) {
 
 static const struct fd_ops native_ops = {.poll = realfs_poll};
 static const struct fd_ops epoll_ops = {.poll = epoll_fd_poll};
+static const struct fd_ops sock_ops = {.poll = sock_poll};
 
 static void fd_init(struct fd *fd, int host_fd, mode_t_ type, const struct fd_ops *ops) {
     memset(fd, 0, sizeof(*fd));
@@ -244,6 +247,45 @@ static void pipe_hup_test(void) {
     puts("pipe HUP: closing empty and buffered writers wakes promptly");
 }
 
+struct send_context {
+    int fd;
+};
+
+static void *send_later(void *context) {
+    struct send_context *send_context = context;
+    struct timespec delay = {.tv_nsec = 50000000};
+    nanosleep(&delay, NULL);
+    CHECK(send(send_context->fd, "x", 1, 0) == 1);
+    return NULL;
+}
+
+// A socket is watched by the host like any real fd. When sock_poll replaced
+// realfs_poll it was not, and a blocked poll saw the data only on poll_wait's
+// 1 s recheck (Wayland, D-Bus and Firefox IPC waited ~900 ms per message).
+static void socket_wake_test(void) {
+    int pair[2];
+    CHECK(socketpair(AF_UNIX, SOCK_STREAM, 0, pair) == 0);
+    struct fd member;
+    fd_init(&member, pair[0], S_IFSOCK, &sock_ops);
+    struct poll *poll = new_poll();
+    CHECK(poll_add_fd(poll, &member, POLL_READ | POLL_HUP | POLL_ERR,
+                (union poll_fd_info) {0}) == 0);
+    struct send_context context = {.fd = pair[1]};
+    pthread_t thread;
+    CHECK(pthread_create(&thread, NULL, send_later, &context) == 0);
+    int events = 0;
+    struct timespec timeout = {.tv_sec = 3};
+    double start = monotonic_time();
+    CHECK(poll_wait(poll, count_event, &events, &timeout) == 1);
+    CHECK(events & POLL_READ);
+    CHECK(monotonic_time() - start < 0.4);
+    CHECK(pthread_join(thread, NULL) == 0);
+    poll_destroy(poll);
+    close(pair[0]);
+    close(pair[1]);
+    puts("socket: a send wakes a blocked poll promptly");
+}
+
 int main(int argc, char **argv) {
     setvbuf(stdout, NULL, _IONBF, 0);
     struct tgroup group = {0};
@@ -258,6 +300,8 @@ int main(int argc, char **argv) {
         fifo_idle_test();
         pipe_hup_test();
     }
+    if (argc == 1 || strcmp(argv[1], "socket") == 0)
+        socket_wake_test();
     alarm(0);
     return 0;
 }
