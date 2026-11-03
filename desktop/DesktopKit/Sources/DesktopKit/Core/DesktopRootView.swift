@@ -237,7 +237,7 @@ public struct DesktopRootView: View {
 
     /// Touch metrics unless a hardware keyboard or pointer is attached, or the user chose.
     private var metrics: WindowMetrics {
-        let touch = style.spec.touchMetrics
+        let touch = UIDevice.current.userInterfaceIdiom == .phone ? .phone : style.spec.touchMetrics
         switch metricsID {
         case "touch": return touch
         case "pointer": return .pointer

@@ -62,6 +62,9 @@ struct WindowMetrics: Equatable, Sendable {
     /// 11" iPad in landscape while every control stays above 44 pt.
     static let touch = WindowMetrics(titleBarHeight: 56, buttonSize: 48, isTouch: true)
     static let tablet = WindowMetrics(titleBarHeight: 64, buttonSize: 48, isTouch: true)
+    /// iPhone Duo: windows are small next to an iPad's, so 44 pt (the minimum tap target)
+    /// leaves them more content height.
+    static let phone = WindowMetrics(titleBarHeight: 44, buttonSize: 44, isTouch: true)
 }
 
 struct SnapPreview: Equatable {
