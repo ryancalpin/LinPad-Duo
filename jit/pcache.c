@@ -17,7 +17,7 @@
 //   tcache.idx   1M slots x 16 bytes, open addressing, mmap'd MAP_SHARED
 //   tcache.dat   append-only records
 // When tcache.dat passes the size cap (ISH_JIT_PCACHE_MB, default 128 MB on
-// macOS, 48 MB on iOS) both are reset. ISH_JIT_PCACHE=0 disables it.
+// macOS, 384 MB on iOS) both are reset. ISH_JIT_PCACHE=0 disables it.
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
@@ -153,7 +153,11 @@ static bool init_locked(void) {
         snprintf(dir, sizeof(dir), "%s/Library/Caches/ish-jit", home);
     }
 #if TARGET_OS_IPHONE
-    uint64_t def_mb = 48;
+    // Firefox alone needs 200+ MB. At 48 MB the desktop's own programs filled the
+    // file, Firefox was never saved, and the next start reset it (iPhone Duo:
+    // 47.7 MB after one Firefox session, every Firefox launch cold, ~20 s).
+    // tcache.dat is a read-only file mapping: clean pages, not app footprint.
+    uint64_t def_mb = 384;
 #else
     uint64_t def_mb = 128;
 #endif

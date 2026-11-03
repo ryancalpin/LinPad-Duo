@@ -301,7 +301,12 @@ done:
     nchunks = arena_size / CHUNK_SIZE;
     // The iOS policy also applies where an iOS memory limit is emulated
     // (ISH_MEM_LIMIT_MB on the Mac), so soaks there see the same code cache.
-    if (TARGET_OS_IPHONE || host_memory_headroom() != 0)
+    // Not on TXM: the whole region is resident from the start and freed chunks
+    // keep their pages, so a smaller budget or a trim saves no memory and only
+    // makes Firefox retranslate (1 fps scrolling, slow typing on the iPhone Duo).
+    if (txm_arena)
+        min_budget = nchunks;
+    else if (TARGET_OS_IPHONE || host_memory_headroom() != 0)
         min_budget = nchunks < 16 ? nchunks : 16;   // 32 MB
     else
         min_budget = nchunks;
@@ -320,7 +325,8 @@ done:
 // chunks may be in use. On iOS the budget starts at 32 MB and grows in 16 MB
 // steps while os_proc_available_memory() leaves at least 768 MB (also where
 // ISH_MEM_LIMIT_MB emulates a limit); a memory
-// warning (jit_codemem_trim) drops it back. Elsewhere it is the whole arena.
+// warning (jit_codemem_trim) drops it back. Elsewhere, and on TXM devices, it
+// is the whole arena.
 
 static bool may_grow(void) {
     uint64_t headroom = host_memory_headroom();   // os_proc_available_memory() on iOS

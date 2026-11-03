@@ -374,7 +374,8 @@ corrupt record is a miss, never wrong code.
   layout and the compact setting. It is also stored in `tcache.salt`, and a
   salt change resets the files at startup (records of another salt can never
   hit).
-* **Size:** capped at 128 MB (48 MB on iOS). Reset at startup when within
+* **Size:** capped at 128 MB (384 MB on iOS, where Firefox alone needs 200+ MB;
+  at 48 MB it was never saved). Reset at startup when within
   4 MB of the cap, since appends stop there.
 * **Writes:** buffered, flushed at 1 MB, about every second by the ticker,
   and when a process exits.
@@ -396,6 +397,10 @@ budget:
   `DISPATCH_SOURCE_TYPE_MEMORYPRESSURE` source. It drops the budget to the
   minimum, retires every address space's chunks except the newest, frees them
   once no thread is inside, and flushes the persistent cache.
+* **TXM devices:** no budget (it is the whole region) and a trim retires no
+  code. The region is resident from the start and freed chunks keep their
+  pages, so the budget saved nothing there and only made Firefox retranslate
+  (on the iPhone Duo: windows ~25 s to draw, slow scrolling and typing).
 * **Freed chunks:** `madvise(MADV_FREE_REUSABLE)`, except on TXM, where a
   discarded page would come back non-executable.
 * **Testing on the Mac:** `ISH_JIT_BUDGET_MB` and `ISH_JIT_TRIM_EVERY_MS`.
