@@ -16,6 +16,7 @@ extension DesktopController {
     /// Once Linux has booted: the Duo's Linux commands and the job list.
     func startDuoServices() {
         Task { await DuoGuestTools.install(on: host) }
+        Task { await DuoGuestTools.refreshIconCaches(on: host) }
         let jobs = DuoJobCenter.shared
         jobs.onLeftoverJobs = { [weak self] leftovers in
             let names = leftovers.map { "“\($0.title)”" }.joined(separator: ", ")

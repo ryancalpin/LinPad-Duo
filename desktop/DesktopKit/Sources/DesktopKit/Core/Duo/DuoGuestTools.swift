@@ -117,4 +117,28 @@ enum DuoGuestTools {
             logger.error("could not install the Duo commands: \(error.localizedDescription, privacy: .public)")
         }
     }
+
+    /// GTK ignores a theme's icon-theme.cache when the theme's folder is newer than the
+    /// cache, and then lists every icon file each time an app starts. Unpacking the system
+    /// image gives every folder a new date, so every cache looked stale: Firefox read
+    /// ~13,500 folders per launch, about a third of its launch CPU. Rebuilding the stale
+    /// caches once, in the background, fixes that for good (afterwards this is a few stats).
+    /// Themes without a cache (cursor-only ones) are left alone: there is nothing to index.
+    static let refreshIconCachesCommand = #"""
+        stale=$(for t in /usr/share/icons/*/; do
+            t=${t%/}
+            [ -f "$t/icon-theme.cache" ] && [ "$t" -nt "$t/icon-theme.cache" ] && echo "$t"
+        done)
+        [ -n "$stale" ] || exit 0
+        command -v gtk-update-icon-cache >/dev/null || exit 0
+        (echo "$stale" | while read -r t; do nice -n 19 gtk-update-icon-cache -q -f -t "$t"; done) \
+            </dev/null >/dev/null 2>&1 &
+        echo "$stale" | wc -l
+        """#
+
+    static func refreshIconCaches(on host: any LinuxHost) async {
+        let result = await host.run(refreshIconCachesCommand)
+        let count = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !count.isEmpty { logger.info("rebuilding \(count, privacy: .public) stale icon caches") }
+    }
 }
